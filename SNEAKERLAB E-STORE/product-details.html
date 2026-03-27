@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <title>SNEAKER LAB | Loading...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        #main-gallery {
+            display: flex;
+            overflow-x: auto;
+            snap-type: x mandatory;
+            scroll-behavior: smooth;
+        }
+
+        #main-gallery > div {
+            scroll-snap-align: center;
+            flex-shrink: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .thumb-btn { opacity: 0.5; transition: 0.3s; border: 2px solid transparent; }
+        .thumb-btn.active { opacity: 1; border-color: #000; }
+
+        .color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            padding: 2px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .color-swatch.active { border-color: #000; }
+        .color-swatch img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+        .add-btn {
+            background: #000;
+            color: #fff;
+            padding: 1.25rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            width: 100%;
+        }
+   /* 1. Kill the horizontal arrow/wiggle on PC & Mobile */
+html, body {
+    overflow-x: hidden !important;
+    position: relative !important;
+    max-width: 100% !important;
+}
+
+/* 2. Hide the invisible 'box' at the bottom of the page */
+iframe, #cf-chl-widget {
+    display: none !important;
+    position: fixed !important;
+    bottom: -1000px !important;
+}
+    </style>
+</head>
+<body class="bg-white text-black">
+
+  <div class="announcement-bar">
+    <p id="announcement-text">FREE SHIPPING ON ALL ORDERS OVER $150!</p>
+  </div>
+
+  <div class="search-overlay" id="search-overlay">
+    <div class="search-container">
+      <div class="search-input-wrapper"><i class="fa-solid fa-magnifying-glass"></i> <input type="text" placeholder="SEARCH SNEAKERS..." id="search-input">
+        <div id="search-results" class="search-results-dropdown"></div>
+      </div><span class="search-close" id="search-close">×</span>
+    </div>
+  </div>
+
+  <header class="main-header">
+    <div class="header-container">
+      <div class="header-left">
+        <div class="hamburger desktop-hide" id="mobile-menu-trigger"><span></span><span></span><span></span>
+        </div>
+        <div class="icon-search mobile-hide"><i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+      </div>
+      <div class="header-center-group">
+        <nav class="desktop-nav mobile-hide"><a href="index.html">HOME</a>
+          <div class="has-dropdown"><a href="javascript:void(0)" class="dropdown-trigger">CATALOG <i class="fa-solid fa-chevron-down"></i></a>
+            <ul class="submenu">
+              <li><a href="sneakers.html">Sneakers</a></li>
+              <li><a href="slides.html">Slides</a></li>
+              <li><a href="caps.html">Caps</a></li>
+        <li><a href="jersey.html">Soccer Jersey</a></li>
+            </ul>
+          </div>
+        </nav>
+        <h1 class="brand-logo">SNEAKER<span>LAB</span></h1>
+        <nav class="desktop-nav mobile-hide">
+          <div class="has-dropdown"><a href="javascript:void(0)" class="dropdown-trigger">SHOP BY BRAND<i class="fa-solid fa-chevron-down"></i></a>
+            <ul class="submenu">
+              <li><a href="nike-collection.html">Nike</a></li>
+              <li><a href="jordan-collection.html">Jordan</a></li>
+              <li><a href="adidas-collection.html">Adidas</a></li>
+              <li><a href="newbalance-collection.html">New Balance</a></li>
+            </ul>
+          </div>
+          <div class="has-dropdown"><a href="javascript:void(0)" class="dropdown-trigger">HELP <i class="fa-solid fa-chevron-down"></i></a>
+            <ul class="submenu">
+              <li><a href="shipping-policy.html">Shipping</a></li>
+              <li><a href="faq.html">FAQ</a></li>
+              <li><a href="returns.html">Returns</a></li>
+              <li><a href="contact.html">Contact</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="header-right">
+        <div class="utility-icons">
+            <a href="#" class="icon-search desktop-hide"><i class="fa-solid fa-magnifying-glass"></i></a>
+             <a href="account.html" class="icon-user mobile-hide"><i class="fa-regular fa-user"></i></a> 
+           <button id="header-cart-btn" class="icon-cart relative z-[100] cursor-pointer border-none bg-transparent p-2">
+    <i class="fa-solid fa-bag-shopping"></i>
+    <span id="cart-badge" class="cart-count absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center hidden">
+        0
+    </span>
+</button>
+      </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header"><span class="drawer-close" id="drawer-close">X</span>
+    </div>
+    <ul class="mobile-nav-links">
+      <li><a href="index.html">HOME</a></li>
+      <li class="has-dropdown"><a href="javascript:void(0)" class="dropdown-trigger">CATALOG <i class="fa-solid fa-chevron-down"></i></a>
+        <ul class="submenu">
+          <li><a href="sneakers.html">Sneakers</a></li>
+          <li><a href="slides.html">Slides</a></li>
+           <li><a href="caps.html">Caps</a></li>
+        <li><a href="jersey.html">Soccer Jersey</a></li>
+        </ul></li>
+      <li class="has-dropdown"><a href="javascript:void(0)" class="dropdown-trigger">SHOP BY BRAND<i class="fa-solid fa-chevron-down"></i></a>
+        <ul class="submenu">
+          <li><a href="nike-collection.html">Nike</a></li>
+          <li><a href="jordan-collection.html">Jordan</a></li>
+          <li><a href="adidas-collection.html">Adidas</a></li>
+          <li><a href="newbalance-collection.html">New Balance</a></li>
+        </ul></li>
+      <li class="has-dropdown"><a href="javascript:void(0)" class="dropdown-trigger">HELP <i class="fa-solid fa-chevron-down"></i></a>
+        <ul class="submenu">
+          <li><a href="shipping-policy.html">Shipping</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="returns.html">Returns</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul></li>
+   </ul>
+   <div class="drawer-footer"><a href="account.html" class="drawer-btn btn-signin">Sign In</a> <a href="account.html" class="drawer-btn btn-register">Register</a>
+   </div>
+  </div>
+
+    <main class="pt-16 max-w-7xl mx-auto">
+        <div class="flex flex-col lg:flex-row lg:gap-12">
+            
+            <div class="lg:w-3/5 w-full">
+                <div id="main-gallery" class="scrollbar-hide bg-gray-50 aspect-square w-full lg:rounded-xl">
+                    <div class="gallery-slide"><img id="main-img-1" src="" class="w-full h-full object-contain"></div>
+                    <div class="gallery-slide"><img id="main-img-2" src="" class="w-full h-full object-contain"></div>
+                    <div class="gallery-slide"><img id="main-img-3" src="" class="w-full h-full object-contain"></div>
+                </div>
+                
+                <div class="flex gap-2 p-4 overflow-x-auto scrollbar-hide">
+                    <button class="thumb-btn active w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0" data-index="0">
+                        <img id="thumb-img-0" src="" class="w-full h-full object-cover">
+                    </button>
+                    <button class="thumb-btn w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0" data-index="1">
+                        <img id="thumb-img-1" src="" class="w-full h-full object-cover">
+                    </button>
+                    <button class="thumb-btn w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0" data-index="2">
+                        <img id="thumb-img-2" src="" class="w-full h-full object-cover">
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:w-2/5 w-full p-6 space-y-6">
+                <div>
+                    <h2 id="product-brand" class="text-3xl font-normal uppercase italic font-black">Brand</h2>
+                    <p id="product-name" class="text-gray-600 text-lg">Product Name</p>
+                </div>
+
+                <div id="price-container" class="flex items-center gap-4">
+                    <span class="text-2xl font-bold">$0.00</span>
+                </div>
+
+                <hr class="border-gray-100">
+
+                <div>
+                    <h3 class="font-bold text-xs uppercase mb-4 tracking-widest">Color</h3>
+                    <div id="swatch-container" class="flex gap-4 items-center">
+                        <span class="text-xs font-bold text-gray-500 uppercase ml-2" id="color-label">Default</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4 pt-4">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="font-bold">Select size</span>
+                        <a href="#" class="underline text-gray-500">Size guide</a>
+                    </div>
+                    <div class="size-selector-container relative w-full mb-6">
+    <div id="selected-size-display" class="border p-4 flex justify-between items-center cursor-pointer bg-white">
+        <span class="text-gray-500">Select size</span>
+        <i class="fa-solid fa-chevron-down text-xs"></i>
+    </div>
+    
+    <div id="size-dropdown-menu" class="absolute left-0 w-full bg-white border border-t-0 z-50 hidden shadow-xl">
+        <div id="size-options-list" class="max-h-60 overflow-y-auto">
+            </div>
+        <button id="size-missing-btn" class="relative z-50 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-black transition-colors w-full text-center border-t border-gray-50">
+    Size missing?
+</button>
+    </div>
+</div>
+<div id="notify-modal" class="fixed inset-0 bg-black/90 z-[10000] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md relative shadow-2xl border border-gray-200">
+        
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+            <h2 class="text-xs font-black uppercase tracking-widest">Size Notification</h2>
+            <button onclick="closeNotifyModal()" class="text-2xl leading-none">&times;</button>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <div class="flex items-center gap-4 border-b pb-4">
+                <img id="modal-product-img" src="" class="w-16 h-16 object-contain">
+                <p class="text-[10px] font-bold text-gray-500 uppercase">We are truly sorry, but this size is currently out of stock. Leave your details below, and we will send you an alert the moment it arrives back in our inventory.
+</p>
+            </div>
+
+            <div>
+                <label class="text-[9px] font-black uppercase block mb-1">Which size do you need?</label>
+                <input type="text" id="modal-size-input" placeholder="e.g. 10.5 US" 
+                       class="w-full border-2 border-black p-3 text-sm rounded-none outline-none focus:bg-yellow-50">
+            </div>
+
+            <div>
+                <label class="text-[9px] font-black uppercase block mb-1">Your Email</label>
+                <input type="email" id="notify-email-input" placeholder="your@email.com" 
+                       class="w-full border-2 border-black p-3 text-sm rounded-none outline-none focus:bg-yellow-50">
+            </div>
+
+            <button id="modal-email-btn" class="w-full bg-black text-white py-4 font-black uppercase tracking-widest text-xs">
+                Submit Request
+            </button>
+        </div>
+    </div>
+</div>
+                    <div id="main-add-trigger" class="space-y-4 pt-4">
+                        <button class="add-btn hover:bg-zinc-800 transition-colors rounded-xl">
+                            Add To Bag
+                        </button>
+                    </div>
+
+                <div class="mt-12 space-y-4 border-t border-gray-100 pt-8">
+                    <div class="border-b border-gray-100 pb-4">
+                        <button class="flex justify-between items-center w-full py-2 text-left accordion-trigger">
+                            <span class="font-bold uppercase text-xs tracking-widest">Product Description</span>
+                            <i class="fa-solid fa-plus text-xs transition-transform duration-300"></i>
+                        </button>
+                        <div id="product-desc" class="accordion-content hidden pt-4 text-sm leading-relaxed text-gray-600">
+                           Description loading...
+                        </div>
+                    </div>
+
+                    <div class="border-b border-gray-100 pb-4">
+                        <button class="flex justify-between items-center w-full py-2 text-left accordion-trigger">
+                            <span class="font-bold uppercase text-xs tracking-widest">Specifications</span>
+                            <i class="fa-solid fa-plus text-xs transition-transform duration-300"></i>
+                        </button>
+                        <div class="accordion-content hidden pt-4 text-sm space-y-2">
+                            <p><span class="font-bold">Style:</span> <span id="spec-style">N/A</span></p>
+                            <p><span class="font-bold">Colorway:</span> <span id="spec-color">N/A</span></p>
+                        </div>
+                    </div>
+
+                    <div class="border-b border-gray-100 pb-4">
+                        <button class="flex justify-between items-center w-full py-2 text-left accordion-trigger">
+                            <span class="font-bold uppercase text-xs tracking-widest">Shipping & Returns</span>
+                            <i class="fa-solid fa-plus text-xs transition-transform duration-300"></i>
+                        </button>
+                        <div class="accordion-content hidden pt-4 text-sm text-gray-600">
+                            <p>Free standard shipping on all orders over $150.</p>
+                        </div>
+                    </div>
+                </div>
+            </div> </div> </main>
+
+    <section class="py-16 px-4 lg:px-12 bg-white overflow-hidden">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-black text-2xl lg:text-3xl font-display font-black uppercase tracking-tight leading-none">
+                    Recommended For You
+                </h2>
+                <p class="text-zinc-500 text-[10px] lg:text-xs mt-2 uppercase font-bold tracking-widest">
+                    Based on your style profile
+                </p>
+            </div>
+            <a href="catalog.html" class="text-red-600 font-bold text-sm hover:underline tracking-widest uppercase">
+                VIEW ALL
+            </a>
+        </div>
+        <div id="curated-grid" class="mobile-scroll-container lg:grid lg:grid-cols-4 gap-6"></div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-6 pb-20">
+        <a href="catalog.html" class="flex items-center justify-center w-full lg:w-max mx-auto gap-3 text-sm font-bold uppercase tracking-widest bg-white border-2 border-black text-black hover:bg-black hover:text-white transition-all duration-300 py-5 px-12 rounded-xl">
+            <i class="fa-solid fa-arrow-left-long text-xs"></i>
+            Back to Shopping
+        </a>
+    </div>
+<script src="js/mock-data.js"></script>
+ <script src="js/script.js"></script>
+    <script src="js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Get Product ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+
+    // 2. Element Selectors
+    const addToBagBtn = document.querySelector('.add-btn');
+    const stickyAddBtn = document.querySelector('#sticky-anchor button');
+    const priceContainer = document.getElementById('price-container');
+
+    // 3. Fetch Data
+    const products = await MockService.getAllProducts();
+    const product = products.find(p => p.id == productId);
+
+    if (product) {
+        // --- DATA INJECTION ---
+        window.currentProduct = product; // Crucial for the "Notify Me" modal
+        document.title = `SNEAKER LAB | ${product.name}`;
+        document.getElementById('product-brand').innerText = product.brand;
+        document.getElementById('product-name').innerText = product.name;
+        document.getElementById('product-desc').innerText = product.description || "Premium quality sneakers designed for comfort and style.";
+
+        // --- TRIGGER NOTIFY SYSTEM & SIZES ---
+        if (typeof renderProductSizes === 'function') {
+            renderProductSizes(product);
+        }
+        
+        // This is the "Finishing Line" - ensures the modal buttons work 
+        // even after dynamic content is loaded.
+        if (typeof initNotifySystem === 'function') {
+            initNotifySystem(); 
+        } else if (typeof initCustomSelect === 'function') {
+            initCustomSelect();
+        }
+
+        // Price & Discount Calculation
+        const hasDiscount = product.old_price && product.old_price > product.price;
+        const discountPercent = hasDiscount ? Math.round(((product.old_price - product.price) / product.old_price) * 100) : 0;
+        
+        priceContainer.innerHTML = `
+            <span class="text-2xl font-bold">$${product.price}.00</span>
+            ${hasDiscount ? `<span class="text-gray-400 line-through text-xl">$${product.old_price}.00</span>` : ''}
+            ${hasDiscount ? `<span class="text-red-600 font-medium ml-2">Save ${discountPercent}%</span>` : ''}
+        `;
+
+        // Images Logic
+        const img2 = product.images?.[1] || product.image_url;
+        const img3 = product.images?.[2] || product.image_url;
+        if(document.getElementById('main-img-1')) document.getElementById('main-img-1').src = product.image_url;
+        if(document.getElementById('main-img-2')) document.getElementById('main-img-2').src = img2; 
+        if(document.getElementById('main-img-3')) document.getElementById('main-img-3').src = img3;
+        if(document.getElementById('thumb-img-0')) document.getElementById('thumb-img-0').src = product.image_url;
+        if(document.getElementById('thumb-img-1')) document.getElementById('thumb-img-1').src = img2;
+        if(document.getElementById('thumb-img-2')) document.getElementById('thumb-img-2').src = img3;
+
+        // Specs & Sticky Bar
+        document.getElementById('spec-style').innerText = product.style_code || 'N/A';
+        document.getElementById('spec-color').innerText = product.colorway || 'N/A';
+
+        // --- DYNAMIC COLOR SWATCHES ---
+        const swatchContainer = document.getElementById('swatch-container');
+        if (swatchContainer) {
+            const firstWord = product.name.split(' ')[0]; 
+            const secondWord = product.name.split(' ')[1]; 
+            const modelFamily = `${firstWord} ${secondWord}`;
+            
+            const relatedColors = products.filter(p => 
+                p.brand === product.brand && 
+                p.name.includes(modelFamily)
+            );
+
+            if (relatedColors.length > 0) {
+                swatchContainer.innerHTML = `
+                    <div class="flex flex-col gap-3">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+                            Colorway: ${product.colorway || 'Original'}
+                        </span>
+                        <div class="flex gap-2">
+                            ${relatedColors.map(item => `
+                                <a href="product-details.html?id=${item.id}" 
+                                   class="w-14 h-14 border-2 p-1 transition-all ${item.id === product.id ? 'border-black' : 'border-gray-100 hover:border-gray-300'}">
+                                    <img src="${item.image_url}" class="w-full h-full object-contain">
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // --- ADD TO CART LOGIC ---
+        const handleAddToCart = () => {
+            const selectedSize = window.currentSelectedSize;
+            if (!selectedSize) {
+                document.getElementById('selected-size-display').classList.add('border-red-500');
+                alert("Please select a size before adding to bag.");
+                return;
+            }
+            document.getElementById('selected-size-display').classList.remove('border-red-500');
+
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.push({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image_url,
+                brand: product.brand,
+                size: selectedSize,
+                quantity: 1
+            });
+
+            localStorage.setItem('cart', JSON.stringify(cart));
+            if (typeof openCart === 'function') openCart(); 
+        };
+
+        if(addToBagBtn) addToBagBtn.addEventListener('click', handleAddToCart);
+        if(stickyAddBtn) stickyAddBtn.addEventListener('click', handleAddToCart);
+
+    } else {
+        document.querySelector('main').innerHTML = `<div class="py-20 text-center"><h2 class="text-2xl font-bold">Product Not Found</h2></div>`;
+    }
+
+    // --- ACCORDION & GALLERY LOGIC ---
+    document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+            const content = trigger.nextElementSibling;
+            const icon = trigger.querySelector('i');
+            content.classList.toggle('hidden');
+            icon.classList.toggle('fa-minus');
+            icon.classList.toggle('fa-plus');
+        });
+    });
+
+    const gallery = document.getElementById('main-gallery');
+    const thumbs = document.querySelectorAll('.thumb-btn');
+    thumbs.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+            gallery.scrollTo({ left: gallery.offsetWidth * i, behavior: 'smooth' });
+        });
+    });
+    // Instead of forcing a 100vh height, let's just refresh the layout
+    const refreshLayout = () => {
+        window.dispatchEvent(new Event('resize'));
+    };
+
+    // Run this AFTER your curated-grid is filled with products
+    if (typeof refreshLayout === 'function') {
+        refreshLayout();
+    }
+    window.addEventListener('load', handleSafariUI);
+});
+</script>
+</body>
+</html>

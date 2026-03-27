@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - SNEAKERLAB</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: var(--gray); }
+
+        .search-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .search-header { text-align: center; margin-bottom: 50px; }
+        .search-header h1 { font-size: 2.5rem; color: var(--black); margin-bottom: 15px; }
+        .search-query { color: var(--accent); font-weight: 700; font-size: 1.2rem; }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        /* TOAST NOTIFICATIONS (TOP STACKING) */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            background: #1a1a1a;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 300px;
+            transform: translateY(-150%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show { transform: translateY(0); }
+        .toast-success { border-left: 4px solid #4ade80; }
+        
+        .toast-close {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            margin-left: 10px;
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            width: 100%;
+        }
+
+        .toast.burning .toast-progress {
+            animation: toastProgress 3s linear forwards;
+        }
+
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        /* PRODUCT CARD STYLES */
+        .product-card { background: #fff; border-radius: 8px; position: relative; transition: 0.3s; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .product-image-container { height: 200px; background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; border-radius: 8px 8px 0 0; }
+        .product-img { width: 85%; height: auto; object-fit: contain; }
+        .product-details { padding: 15px; }
+        .brand-tag { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+        .product-name { font-size: 0.9rem; font-weight: 700; height: 40px; overflow: hidden; margin: 8px 0; }
+        .product-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        
+        .add-to-cart-btn, .buy-now-btn {
+            flex: 1; padding: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border-radius: 4px; border: 2px solid var(--black); transition: 0.3s;
+        }
+        .add-to-cart-btn { background: var(--black); color: white; }
+        .buy-now-btn { background: var(--accent); color: white; border-color: var(--accent); }
+
+        @media (max-width: 768px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-icons">
+                <a href="login.html" class="icon-link"><i class="fa-regular fa-user"></i></a>
+                <a href="wishlist.html" class="icon-link">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="wishlist-count">0</span>
+                </a>
+                <a href="cart.html" class="icon-link">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count">0</span>
+                </a>
+            </div>
+            <div class="search-wrapper">
+                <input type="text" id="search-input" placeholder="SEARCHING FOR A SPECIFIC PAIR?">
+                <button type="submit" class="search-btn" onclick="performSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+            <div class="logo"><a href="index.html">SNEAKER<span class="logo-accent">LAB</span></a></div>
+        </div>
+    </nav>
+
+    <div class="search-container">
+        <div class="search-header">
+            <h1>Search Results</h1>
+            <p>Results for: <span class="search-query" id="search-term"></span></p>
+        </div>
+        <div class="results-count">Found <strong id="result-count">0</strong> product(s)</div>
+        <div id="products-grid" class="products-grid"></div>
+        <div id="no-results" class="no-results" style="display: none; text-align: center; padding: 50px;">
+            <h2>No Products Found</h2>
+            <a href="index.html" class="btn-primary">Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        const allProducts = [
+            { name: "Dunk Low Retro 'Black/White-Panda'", price: "$110.00", img: "images/dunk low panda.jpg", brand: "NIKE" },
+            { name: "Jordan 4 Military Blue", price: "$210.00", img: "images/j4millitaryblue.jpg", brand: "JORDAN" },
+            { name: "Air Force 1´07 sneakers White on White", price: "$230.00", img: "images/af1white.jpg", brand: "NIKE" },
+            { name: "Campus 00s 'Black/White Suede' sneakers", price: "$120.00", img: "images/adidascampus.jpg", brand: "ADIDAS" },
+            { name: "Nocta Glide sneakers", price: "$230.00", img: "images/Nocta Glide sneakers.jpg", brand: "NIKE" },
+            { name: "Mesh panel sneakers", price: "$230.00", img: "images/mesh-panel-sneakers.jpg", brand: "NEW BALANCE" },
+            { name: "Air Jordan 1 Retro High 'Chicago Lost And Found'", price: "$230.00", img: "images/Air Jordan 1 Retro High OG 'Chicago Lost And Found' sneakers.jpg", brand: "JORDAN" },
+            { name: "Air Jordan 3 'Black Cat' sneakers", price: "$230.00", img: "images/Air Jordan 3 'Black Cat' sneakers.jpg", brand: "JORDAN" },
+            { name: "Ultraboost 22 'Core Black' sneakers", price: "$180.00", img: "images/ultraboost22.jpg", brand: "ADIDAS" },
+            { name: "Air Max 90 'White/Red' sneakers", price: "$140.00", img: "images/airmax90.jpg", brand: "NIKE" },
+            { name: "Yeezy 350 V2 'Ash Grey'", price: "$220.00", img: "images/yeezy350.jpg", brand: "ADIDAS" },
+            { name: "Nike Blazer Mid 'Vintage'", price: "$100.00", img: "images/blazer-vintage.jpg", brand: "NIKE" },
+            { name: "Converse Chuck Taylor All Star 'Black'", price: "$65.00", img: "images/chuck-taylor.jpg", brand: "CONVERSE" },
+            { name: "Puma RS-X 'Futuristic' sneakers", price: "$105.00", img: "images/puma-rsx.jpg", brand: "PUMA" },
+            { name: "Nike Air Huarache 'Bright Crimson'", price: "$125.00", img: "images/huarache.jpg", brand: "NIKE" },
+            { name: "adidas NMD R1 'Core Black' sneakers", price: "$135.00", img: "images/nmd-r1.jpg", brand: "ADIDAS" },
+            { name: "Jordan 1 Low 'Grey/Black' sneakers", price: "$115.00", img: "images/jordan1-low.jpg", brand: "JORDAN" },
+            { name: "Nike Court Legacy 'White/Blue'", price: "$85.00", img: "images/court-legacy.jpg", brand: "NIKE" },
+            { name: "adidas Stan Smith 'Classic White'", price: "$95.00", img: "images/stan-smith.jpg", brand: "ADIDAS" },
+            { name: "Nike SB Dunk Low 'Crimson' sneakers", price: "$115.00", img: "images/sb-dunk.jpg", brand: "NIKE" },
+            { name: "6-Inch Premium 'Wheat' Boots", price: "$230", img: "images/6 Inch Premium 'Wheat' Boots.jpg", brand: "TIMBERLAND" },
+            { name: "Air Jordan 11 Retro 'Concord' sneakers", price: "$115", img: "images/Air Jordan 11 Retro 'Concord' sneakers.jpg", brand: "JORDAN" },
+            { name: "Shox TL sneakers", price: "$140", img: "images/Shox TL sneakers.jpg", brand: "NIKE" },
+            { name: "Air Force 1 '07 LV8 1' Triple Red' sneakers", price: "$210", img: "images/Air Force 1 '07 LV8 1 ' Triple Red ' sneakers.jpg", brand: "NIKE" },
+            { name: "6-Inch Premium Black Boots", price: "$230", img: "images/6-Inch Premium Black boots.jpg", brand: "TIMBERLAND" },
+            { name: "Knu Skool padded sneakers", price: "$115", img: "images/Knu Skool padded sneakers.jpg", brand: "VANS" },
+            { name: "Air Force 1 Low '07 'Triple Black' sneakers", price: "$140", img: "images/Air Force 1 Low '07 ' Triple Black ' sneakers.jpg", brand: "NIKE" },
+            { name: "Air Jordan 4 Retro 'Black Cat' sneakers", price: "$210", img: "images/Air Jordan 4 Retro ' Black Cat ' sneakers.jpg", brand: "JORDAN" }
+        ];
+
+        // --- TOAST ENGINE ---
+        function showToast(message, type = 'success') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type} burning`;
+            toast.innerHTML = `
+                <span>${message}</span>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+                <div class="toast-progress"></div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3000);
+        }
+
+        // --- SEARCH ENGINE ---
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const query = urlParams.get('q') || '';
+            document.getElementById('search-term').innerText = `"${query}"`;
+            const results = allProducts.filter(p => 
+                p.name.toLowerCase().includes(query.toLowerCase()) || 
+                p.brand.toLowerCase().includes(query.toLowerCase())
+            );
+            displayResults(results);
+            document.getElementById('result-count').innerText = results.length;
+            document.getElementById('no-results').style.display = results.length === 0 ? 'block' : 'none';
+        }
+// 1. Updated Display Results
+function displayResults(results) {
+    const grid = document.getElementById('products-grid');
+    
+    // We use data-attributes to store the info instead of messy function strings
+    grid.innerHTML = results.map(shoe => {
+        return `
+        <div class="product-card">
+            <div class="product-image-container">
+                <img src="${shoe.img}" class="product-img">
+            </div>
+            <div class="product-details">
+                <span class="brand-tag">${shoe.brand}</span>
+                <h3 class="product-name">${shoe.name}</h3>
+                <p class="product-price">${shoe.price}</p>
+                <div class="product-buttons">
+                    <button class="add-to-cart-btn" 
+                        data-name="${shoe.name}" 
+                        data-price="${shoe.price}" 
+                        data-img="${shoe.img}" 
+                        data-brand="${shoe.brand}">Add to Cart</button>
+                    <button class="buy-now-btn" 
+                        data-name="${shoe.name}" 
+                        data-price="${shoe.price}" 
+                        data-img="${shoe.img}" 
+                        data-brand="${shoe.brand}">Buy Now</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// 2. The "Master" Event Listener (Fixes the "only one works" issue)
+document.getElementById('products-grid').addEventListener('click', function(e) {
+    // Check if the clicked element is one of our buttons
+    const isAddBtn = e.target.classList.contains('add-to-cart-btn');
+    const isBuyBtn = e.target.classList.contains('buy-now-btn');
+
+    if (isAddBtn || isBuyBtn) {
+        // Grab the data we stored in the data-attributes
+        const product = {
+            name: e.target.getAttribute('data-name'),
+            price: e.target.getAttribute('data-price'),
+            img: e.target.getAttribute('data-img'),
+            brand: e.target.getAttribute('data-brand'),
+            quantity: 1,
+            size: null
+        };
+
+        // Save to LocalStorage
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.push(product);
+        localStorage.setItem('cart', JSON.stringify(cart));
+
+        if (isAddBtn) {
+            showToast(`Added ${product.name} to cart!`, 'success');
+            updateCartCounter();
+        } else {
+            // Redirect if it was the Buy Now button
+            window.location.href = 'cart.html';
+        }
+    }
+});
+
+        
+
+        // --- CART LOGIC ---
+        function addToCart(name, price, img, brand) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.push({ name, price, img, brand, quantity: 1, size: null });
+            localStorage.setItem('cart', JSON.stringify(cart));
+            showToast("Added to cart!");
+            updateCartCounter();
+        }
+
+        function buyNow(name, price, img, brand) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.push({ name, price, img, brand, quantity: 1, size: null });
+            localStorage.setItem('cart', JSON.stringify(cart));
+            window.location.href = 'cart.html';
+        }
+
+        function updateCartCounter() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            document.querySelector('.cart-count').innerText = cart.length;
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

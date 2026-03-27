@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNEAKERLAB Admin | Orders</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-style.css">
+    <style>
+        .status-pill { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+        /* Matching the 'status' values in your Supabase database */
+        .pending { background: #fff4e5; color: #b98900; }
+        .shipped { background: #e3f1df; color: #008060; }
+        .cancelled { background: #fbeae5; color: #d72c0d; }
+
+        .order-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .order-table th { text-align: left; padding: 15px; border-bottom: 1px solid #e1e3e5; color: #6d7175; font-size: 13px; }
+        .order-table td { padding: 15px; border-bottom: 1px solid #e1e3e5; font-size: 14px; }
+        
+        .filter-tabs { display: flex; gap: 20px; border-bottom: 1px solid #e1e3e5; margin-bottom: 20px; }
+        .tab { padding: 10px 5px; cursor: pointer; color: #6d7175; font-weight: 500; }
+        .tab.active { color: #008060; border-bottom: 2px solid #008060; }
+    </style>
+</head>
+<body>
+
+   <nav class="sidebar">
+    <div class="sidebar-brand"><i class="fa-solid fa-sneaker"></i> SNEAKER<span>LAB</span></div>
+    <div class="nav-links">
+        <a href="admin.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+        <a href="inventory.html" class="nav-item"><i class="fa-solid fa-box"></i> Products</a>
+        <a href="orders.html" class="nav-item active"><i class="fa-solid fa-receipt"></i> Orders</a>
+        <a href="customers.html" class="nav-item"><i class="fa-solid fa-users"></i> Customers</a>
+        <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> Settings</a>
+        <div class="nav-divider"></div>
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-eye"></i> View Store</a>
+    </div>
+</nav>
+
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>Orders</h1>
+            <div class="admin-actions">
+                <button class="btn-secondary" onclick="exportOrdersToExcel()"><i class="fa-solid fa-file-export"></i> Export Excel</button>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="filter-tabs">
+                <div class="tab active">All</div>
+                <div class="tab">Unfulfilled</div>
+                <div class="tab">Fulfilled</div>
+            </div>
+
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-list-body"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,4623 @@
+
+
+project url:https://bbzdwxrljjdabynquqvm.supabase.co
+publishable key:sb_publishable_z7_Nuv1X1ivnNQd50CGlqg_LtW0LACX 
+anon key:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiemR3eHJsampkYWJ5bnF1cXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODU0MDgsImV4cCI6MjA4NzM2MTQwOH0.vJgV1_mYDAGoZs-PfvjCu3EWPXmkoCX0b_Xs8c7qISQ
+
+
+
+
+/**
+ * admin-dashboard.js
+ * Handles KPI stats, Charts, Inventory Submission, Editing, and Deletion via Supabase
+ */
+
+// 1. DASHBOARD INITIALIZATION (KPIs & Charts)
+async function initDashboard() {
+    try {
+        const { data: orders, error } = await _supabase.from('orders').select('*');
+        if (error) throw error;
+
+        let totalSales = 0;
+        let orderCount = orders.length;
+        let productPerformance = {};
+
+        orders.forEach(order => {
+            totalSales += parseFloat(order.total_price || 0);
+            if (order.items && Array.isArray(order.items)) {
+                order.items.forEach(item => {
+                    const price = typeof item.price === 'string' ? parseFloat(item.price.replace('$', '')) : item.price;
+                    productPerformance[item.name] = (productPerformance[item.name] || 0) + (price * (item.quantity || 1));
+                });
+            }
+        });
+
+        if(document.getElementById('total-sales')) document.getElementById('total-sales').innerText = `$${totalSales.toLocaleString()}`;
+        if(document.getElementById('total-orders')) document.getElementById('total-orders').innerText = orderCount;
+        if(document.getElementById('aov')) document.getElementById('aov').innerText = `$${(totalSales / orderCount || 0).toFixed(2)}`;
+
+        renderProductChart(productPerformance);
+    } catch (err) {
+        console.error("Dashboard Load Error:", err.message);
+    }
+}
+
+// 2. CHART RENDERING
+function renderProductChart(data) {
+    const chartCanvas = document.getElementById('topProductsBarChart');
+    if (!chartCanvas) return;
+    const ctx = chartCanvas.getContext('2d');
+    const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sorted.map(i => i[0]),
+            datasets: [{ label: 'Revenue', data: sorted.map(i => i[1]), backgroundColor: '#008060' }]
+        },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+    });
+}
+
+// 3. INVENTORY MANAGEMENT (Load, Edit, Delete)
+async function refreshInventoryList() {
+    const listBody = document.getElementById('inventory-list-body');
+    if (!listBody) return;
+
+    const { data: products, error } = await _supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching inventory:", error);
+        return;
+    }
+
+    listBody.innerHTML = products.map(product => `
+        <tr>
+            <td><img src="${product.image_url}" width="40" style="border-radius:4px;"></td>
+            <td><strong>${product.name}</strong></td>
+            <td>$${product.price}</td>
+            <td>
+                <button onclick="editProductPrice(${product.id}, ${product.price})" style="color:#008060; background:none; border:none; cursor:pointer; margin-right:10px;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="deleteProduct(${product.id})" style="color:#d72c0d; background:none; border:none; cursor:pointer;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+} // <--- THIS WAS THE MISSING BRACE
+
+async function deleteProduct(productId) {
+    if (!confirm("Are you sure you want to remove this sneaker?")) return;
+    const { error } = await _supabase.from('products').delete().eq('id', productId);
+    if (error) {
+        showToast("Delete failed: " + error.message, "error");
+    } else {
+        showToast("Product removed!", "success");
+        refreshInventoryList();
+    }
+}
+
+async function editProductPrice(productId, oldPrice) {
+    const newPrice = prompt(`Update price:`, oldPrice);
+    if (newPrice === null || isNaN(newPrice) || newPrice === "") return;
+
+    const { error } = await _supabase
+        .from('products')
+        .update({ price: parseFloat(newPrice) })
+        .eq('id', productId);
+
+    if (error) {
+        showToast("Update failed: " + error.message, "error");
+    } else {
+        showToast("Price updated!", "success");
+        refreshInventoryList();
+    }
+}
+
+// 4. SUPABASE INSERT LOGIC
+async function addSneakerToSupabase(name, price, brand, imgUrl, desc, cat) {
+    const { data, error } = await _supabase
+        .from('products')
+        .insert([{ 
+            name: name, price: parseFloat(price), brand: brand, 
+            image_url: imgUrl, description: desc, category: cat 
+        }]);
+
+    if (error) {
+        alert("Error: " + error.message);
+    } else {
+        showToast("Sneaker added!", "success");
+        refreshInventoryList(); // Update the list immediately
+    }
+}
+
+// 5. GLOBAL INITIALIZATION
+document.addEventListener('DOMContentLoaded', () => {
+    const inventoryForm = document.getElementById('inventory-form');
+    if (inventoryForm) {
+        inventoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('prod-title').value;
+            const price = document.getElementById('prod-price').value;
+            const brand = document.getElementById('prod-brand').value;
+            const imgUrl = document.getElementById('prod-img-url').value;
+            const desc = document.getElementById('prod-desc').value;
+            const cat = document.getElementById('prod-cat').value;
+
+            await addSneakerToSupabase(title, price, brand, imgUrl, desc, cat);
+            inventoryForm.reset();
+        });
+    }
+
+    refreshInventoryList();
+    if (document.getElementById('total-sales')) initDashboard();
+});
+
+
+remove the "LOAD MORE HEAT" button in the "Curated For You" section and i need this home page with its logical flow to appear smoothly across all devices it should detect device size and it will display pages accordingly and also in a section that displays 8 products at once on big screens one can slide the first 8 products in the section to the right before a "view all "option shows
+
+/* Container to hide scrollbar but allow sliding */
+.slider-container {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 20px;
+    scrollbar-width: none; /* Firefox */
+}
+
+.slider-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+/* Product Grid setup for Sliding */
+.product-grid {
+    display: flex;
+    gap: 20px;
+    padding: 0 5%; /* Aligns with page margins */
+}
+
+/* Base Product Card Size (Desktop - 4 to 8 visible) */
+.product-card {
+    min-width: 250px;
+    flex: 0 0 auto;
+    transition: transform 0.3s ease;
+}
+
+/* View All Card Styling */
+.view-all-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f4f4;
+    border: 2px dashed #ccc;
+    text-align: center;
+}
+
+.view-all-card i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* --- Responsive Device Detection --- */
+
+/* Tablets (Portrait) */
+@media (max-width: 992px) {
+    .product-card {
+        min-width: 200px;
+    }
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Mobile Devices */
+@media (max-width: 600px) {
+    .product-card {
+        min-width: 160px; /* Smaller cards for small screens */
+    }
+    
+    .nav-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .search-wrapper {
+        width: 100%;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+    }
+}
+
+
+<header class="hero-wrapper">
+    <div class="hero-container">
+        <div class="hero-content">
+            <span class="hero-subtitle">NEW RELEASE</span>
+            <h1>AIR JORDAN 5 'WOLF GREY'</h1>
+            <a href="#products" class="hero-btn">SHOP NOW</a>
+        </div>
+        <div class="hero-image">
+            <img src="images/hero-shoes.png" alt="Air Jordan 5 Wolf Grey">
+        </div>
+    </div>
+</header>
+
+    <section class="product-section" id="products">
+        <div class="section-header">
+            <h2 class="section-title">Latest Arrivals</h2>
+            <a href="latest-arrivals.html" class="view-all-link">View All</a>
+        </div>
+        
+        <div class="slider-wrapper">
+            <button class="nav-arrow prev" onclick="scrollSlider(this, -1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="slider-container">
+                <div id="latest-grid" class="product-grid slider-grid">
+                    </div>
+            </div>
+            <button class="nav-arrow next" onclick="scrollSlider(this, 1)"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </section>
+
+    <section class="brands-section" id="brands">
+        <h2 class="section-title">SHOP BY BRAND</h2>
+        <div class="slider-container">
+            <div class="brand-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                <div class="brand-card" onclick="filterByBrand('NIKE')">
+                    <div class="brand-thumb" style="background-image: url('images/nikelogo.jpg');"></div>
+                    <span>NIKE</span>
+                </div>
+                <div class="brand-card" onclick="filterByBrand('JORDAN')">
+                    <div class="brand-thumb" style="background-image: url('images/jordanlogo.jpg');"></div>
+                    <span>JORDAN</span>
+                </div>
+                <div class="brand-card" onclick="filterByBrand('ADIDAS')">
+                    <div class="brand-thumb" style="background-image: url('images/adidaslogo.jpg');"></div>
+                    <span>ADIDAS</span>
+                </div>
+                <div class="brand-card" onclick="filterByBrand('NEW BALANCE')">
+                    <div class="brand-thumb" style="background-image: url('images/nblogo.jpg');"></div>
+                    <span>NEW BALANCE</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    /* Import a modern font */
+@import url('https://fonts.googleapis.com');
+
+:root {
+    --black: #000000;
+    --white: #ffffff;
+    --gray: #f4f4f4;
+    --accent: #ff4d4d; /* For Sales/Alerts */
+    --hero-gradient: linear-gradient(180deg, #e0e4e7 0%, #aab0b5 50%, #2b2b2b 100%);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ===== NAVBAR STYLING (PRIMARY) ===== */
+.navbar {
+    background-color: var(--white);
+    height: 100px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eaeaea;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 0;
+}
+
+.nav-container {
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 40px;
+}
+
+/* LEFT ICONS */
+.nav-icons {
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    min-width: auto;
+    order: 3; /* Far right */
+    margin-left: auto; /* Pushes to the right */
+}
+
+.icon-link {
+    text-decoration: none;
+    color: #000;
+    font-size: 1.2rem;
+    position: relative;
+    transition: 0.3s;
+}
+
+.icon-link:hover {
+    color: var(--accent);
+}
+
+.wishlist-count,
+.cart-count {
+    background: var(--black);
+    color: var(--white);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 50%;
+    position: absolute;
+    top: -10px;
+    right: -10px;
+}
+
+/* CENTER SEARCH BAR */
+.search-wrapper {
+    flex: 1;
+    max-width: 500px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    order: 2; /* Middle-right */
+    margin: 0 20px;
+}
+
+#search-input {
+    width: 100%;
+    padding: 12px 45px 12px 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: var(--gray);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: width 0.3s ease;
+}
+
+#search-input:focus {
+    outline: none;
+    border-color: var(--black);
+    background: var(--white);
+}
+
+.search-btn {
+    position: absolute;
+    right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #666;
+}
+
+/* RIGHT LOGO */
+.logo {
+    min-width: auto;
+    text-align: left;
+    order: 1; /* Far left */
+}
+
+.logo a {
+    text-decoration: none;
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: #000;
+    letter-spacing: -1px;
+}
+
+.logo-accent {
+    color: var(--accent);
+}
+
+/* ===== HERO SECTION STYLING (ADJUSTED SIZE) ===== */
+.hero-wrapper {
+    padding: 20px;
+    width: 100%;
+    background: var(--white);
+}
+
+.hero-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 400px; /* Scaled down from 600px */
+    background: var(--hero-gradient);
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 80px;
+    overflow: hidden;
+    position: relative;
+}
+
+.hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 40vh; /* Scaled down from 50vh */
+    background-color: var(--gray);
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.hero-content {
+    flex: 1;
+    z-index: 2;
+    color: var(--white);
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hero-subtitle {
+    display: block;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    opacity: 0.8;
+    font-size: 0.85rem;
+}
+
+.hero-content h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem); /* Scaled down typography */
+    line-height: 1.1;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    font-weight: 900;
+}
+
+.hero p {
+    font-size: 0.95rem;
+    margin-bottom: 25px;
+    color: #555;
+}
+
+.hero-btn {
+    display: inline-block;
+    background: var(--white);
+    color: var(--black);
+    padding: 14px 35px; /* Compact padding */
+    border-radius: 50px;
+    font-weight: 800;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.hero-btn:hover {
+    transform: scale(1.05);
+}
+
+.hero-image {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-image img {
+    width: auto;
+    height: 95%; /* Adjusting height to fit new container */
+    max-height: 380px;
+    object-fit: contain;
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,0.3));
+    transform: scale(1.1); /* Maintaining pop-out effect */
+}
+
+/* Hero Section (Alternative Style) */
+.hero h1 {
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+    font-weight: 900;
+}
+
+.btn-primary {
+    background: var(--black);
+    color: var(--white);
+    padding: 8px 28px;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 0.85rem;
+    display: inline-block;
+    transition: all 0.3s;
+    border-radius: 50px;
+    border: 2px solid var(--black);
+}
+
+.btn-primary:hover {
+    background: transparent;
+    color: var(--black);
+}
+
+/* PRODUCT SECTION */
+.product-section {
+    padding: 40px 5%;
+    background: var(--white);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.section-title {
+    text-align: left;
+    font-size: 1.8rem;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0;
+    font-weight: 900;
+}
+
+.view-all-link {
+    text-decoration: none;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    transition: 0.3s;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 5px;
+}
+
+.view-all-link:hover {
+    color: var(--black);
+    border-bottom-color: var(--black);
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.product-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    transition: 0.3s;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.product-image-container {
+    height: 200px;
+    background: #f9f9f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-image-container img {
+    width: 85%;
+    height: auto;
+    object-fit: contain;
+}
+
+.product-details {
+    padding: 15px;
+}
+
+.product-name {
+    font-size: 0.9rem;
+    height: 40px;
+    overflow: hidden;
+}
+
+.product-price {
+    font-size: 1rem;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.product-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.add-to-cart-btn,
+.buy-now-btn {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 2px solid var(--black);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-to-cart-btn {
+    background: var(--black);
+    color: var(--white);
+}
+
+.add-to-cart-btn:hover {
+    background: transparent;
+    color: var(--black);
+}
+
+.buy-now-btn {
+    background: var(--accent);
+    color: var(--white);
+    border-color: var(--accent);
+}
+
+.buy-now-btn:hover {
+    background: transparent;
+    color: var(--accent);
+}
+
+.product-card .wishlist-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    color: #000000;
+    font-size: 1.5rem;
+}
+
+.product-card .wishlist-btn.active {
+    color: var(--accent);
+}
+
+.product-card .wishlist-btn:hover {
+    transform: scale(1.2);
+}
+
+/* CATEGORIES */
+.categories-section {
+    padding: 40px 5%;
+}
+
+.category-grid {
+    display: flex;
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.category-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.category-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 50px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 250px;
+    min-height: 200px;
+    position: relative;
+    overflow: hidden;
+}
+
+.category-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+}
+
+.category-btn span {
+    position: relative;
+    z-index: 2;
+    color: var(--white);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* BRANDS */
+.brands-section {
+    padding: 40px 5%;
+}
+
+.brand-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.brand-thumb {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #eee;
+    margin-bottom: 10px;
+}
+
+/* FOOTER */
+.main-footer {
+    background-color: #000;
+    color: #fff;
+    padding: 80px 5% 20px;
+    margin-top: auto;
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 2fr;
+    gap: 50px;
+}
+
+/* SLIDERS & UTILS */
+.slider-container {
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    padding: 20px 0;
+    scrollbar-width: none;
+}
+
+.slider-container::-webkit-scrollbar { display: none; }
+
+.slider-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 20px;
+    padding-left: 5%;
+}
+
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.nav-arrow:hover {
+    background: var(--black);
+    color: var(--white);
+}
+
+/* ===== REFINED MOBILE MEDIA QUERIES ===== */
+@media (max-width: 992px) {
+    .hero-container {
+        height: 350px; /* Even more compact for tablets */
+        padding: 0 40px;
+    }
+    .hero-content h1 { font-size: 2.2rem; }
+}
+
+@media (max-width: 768px) {
+    /* Navbar Adjustment */
+    .nav-container { flex-wrap: wrap; gap: 10px; padding: 10px 0; }
+    .logo { order: 1; flex: 1; }
+    .nav-icons { order: 2; margin-left: 0; }
+    .search-wrapper { order: 3; flex: 1 1 100%; margin: 10px 0; }
+
+    /* Hero Scaling for Mobile */
+    .hero-container {
+        flex-direction: column;
+        height: auto;
+        padding: 40px 20px;
+        text-align: center;
+        border-radius: 25px;
+    }
+    
+    .hero-content { padding: 0; }
+    .hero-content h1 { font-size: 1.8rem; margin-bottom: 15px; }
+    .hero-subtitle { font-size: 0.75rem; }
+    .hero-btn { padding: 12px 30px; }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        max-height: 220px; /* Prevent over-stretching on mobile */
+        margin-top: 20px;
+        transform: scale(1);
+    }
+
+    /* Grid to Swiper */
+    .product-grid {
+        display: flex;
+        overflow-x: auto;
+        gap: 15px;
+        padding: 20px 5%;
+    }
+
+    .footer-container { grid-template-columns: 1fr; text-align: center; }
+    .nav-arrow { display: none !important; }
+}
+
+@media (max-width: 480px) {
+    .hero-container { padding: 30px 15px; }
+    .hero-content h1 { font-size: 1.5rem; }
+}
+
+
+
+
+function renderProducts(products, gridId, viewAllLink) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+
+    if (!products || products.length === 0) {
+        grid.innerHTML = '<p class="no-results">No pairs found in this section.</p>';
+        return;
+    }
+
+    const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+
+    const productHTML = products.map(product => {
+        const isWishlisted = wishlist.some(item => item.id === product.id);
+        
+        const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
+        const discountPercent = hasDiscount 
+            ? Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100) 
+            : 0;
+
+        // Clean object for button functions
+        const productJSON = JSON.stringify({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image_url: product.image_url,
+            brand: product.brand
+        }).replace(/"/g, '&quot;');
+
+        return `
+        <div class="product-card">
+            <div class="product-image-container">
+                ${hasDiscount ? `<span class="discount-badge">-${discountPercent}%</span>` : ''}
+                <button class="wishlist-btn ${isWishlisted ? 'active' : ''}" onclick="toggleWishlist(this, ${productJSON})">
+                    <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                </button>
+                <img src="${product.image_url || 'images/placeholder.jpg'}" 
+                     alt="${product.name}" 
+                     class="product-img" 
+                     onclick="window.location.href='product-details.html?id=${product.id}'">
+            </div>
+            <div class="product-details">
+                <span class="brand-tag">${product.brand || 'PREMIUM'}</span>
+                <h3 class="product-name">${product.name}</h3>
+                
+                <div class="price-container">
+                    <span class="current-price">$${parseFloat(product.price).toFixed(2)}</span>
+                    ${hasDiscount ? `<span class="was-price">$${parseFloat(product.compare_at_price).toFixed(2)}</span>` : ''}
+                </div>
+                
+                <div class="product-buttons">
+                    <button class="add-to-cart-btn" onclick='addToCart(${productJSON})'>Add</button>
+                    <button class="buy-now-btn" onclick='buyNow(${productJSON})'>Buy</button>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+
+
+
+
+
+
+
+    /* Import a modern font */
+
+@import url('https://fonts.googleapis.com');
+
+
+:root {
+
+    --black: #000000;
+
+    --white: #ffffff;
+
+    --gray: #f4f4f4;
+
+    --accent: #ff4d4d; /* For Sales/Alerts */
+
+}
+
+
+* {
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+    font-family: 'Inter', sans-serif;
+
+}
+
+
+/* Navbar Container */
+
+/* ===== NAVBAR STYLING (PRIMARY) ===== */
+
+.navbar {
+
+    background-color: var(--white);
+
+    height: 100px;
+
+    display: flex;
+
+    align-items: center;
+
+    border-bottom: 1px solid #eaeaea;
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 1000;
+
+    padding: 0;
+
+}
+
+
+.nav-container {
+
+    width: 95%;
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    display: flex;
+
+    justify-content: flex-start;
+
+    align-items: center;
+
+    gap: 40px;
+
+}
+
+
+/* LEFT ICONS */
+
+.nav-icons {
+
+    display: flex;
+
+    gap: 25px;
+
+    align-items: center;
+
+    min-width: auto;
+
+    order: 3; /* Far right */
+
+    margin-left: auto; /* Pushes to the right */
+
+}
+
+
+.icon-link {
+
+    text-decoration: none;
+
+    color: #000;
+
+    font-size: 1.2rem;
+
+    position: relative;
+
+    transition: 0.3s;
+
+}
+
+
+.icon-link:hover {
+
+    color: var(--accent);
+
+}
+
+
+.wishlist-count,
+
+.cart-count {
+
+    background: var(--black);
+
+    color: var(--white);
+
+    font-size: 10px;
+
+    padding: 2px 6px;
+
+    border-radius: 50%;
+
+    position: absolute;
+
+    top: -10px;
+
+    right: -10px;
+
+}
+
+
+/* CENTER SEARCH BAR */
+
+.search-wrapper {
+
+    flex: 1;
+
+    max-width: 500px;
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    order: 2; /* Middle-right */
+
+    margin: 0 20px;
+
+}
+
+
+#search-input {
+
+    width: 100%;
+
+    padding: 12px 45px 12px 20px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 4px;
+
+    background: var(--gray);
+
+    font-size: 0.85rem;
+
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+
+    transition: width 0.3s ease;
+
+}
+
+
+#search-input:focus {
+
+    outline: none;
+
+    border-color: var(--black);
+
+    background: var(--white);
+
+}
+
+
+.search-btn {
+
+    position: absolute;
+
+    right: 15px;
+
+    background: none;
+
+    border: none;
+
+    cursor: pointer;
+
+    font-size: 1rem;
+
+    color: #666;
+
+}
+
+
+/* RIGHT LOGO */
+
+.logo {
+
+    min-width: auto;
+
+    text-align: left;
+
+    order: 1; /* Far left */
+
+}
+
+
+.logo a {
+
+    text-decoration: none;
+
+    font-weight: 900;
+
+    font-size: 1.5rem;
+
+    color: #000;
+
+    letter-spacing: -1px;
+
+}
+
+
+.logo-accent {
+
+    color: var(--accent);
+
+}
+
+
+/* Hero Section Styling */
+
+.hero {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    height: 50vh; /* Reduced from 85vh */
+
+    background-color: var(--gray);
+
+    position: relative;
+
+    overflow: hidden;
+
+    border-radius: 0; /* No rounded corners */
+
+}
+
+
+.hero-content {
+
+    position: relative;
+
+    z-index: 2;
+
+    padding: 0 5%;
+
+    flex: 1;
+
+    max-width: 600px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+}
+
+
+.hero h1 {
+
+    font-size: 2.8rem;
+
+    margin-bottom: 15px;
+
+    font-weight: 900;
+
+}
+
+
+.hero p {
+
+    font-size: 1rem;
+
+    margin-bottom: 30px;
+
+    color: #555;
+
+}
+
+
+/* Primary Button Styling */
+
+.btn-primary {
+
+    background: var(--black);
+
+    color: var(--white);
+
+    padding: 8px 28px;
+
+    text-decoration: none;
+
+    text-transform: uppercase;
+
+    font-weight: bold;
+
+    font-size: 0.85rem;
+
+    display: inline-block;
+
+    transition: all 0.3s;
+
+    border-radius: 50px; /* Oval shape */
+
+    border: 2px solid var(--black);
+
+}
+
+
+.btn-primary:hover {
+
+    background: transparent;
+
+    color: var(--black);
+
+}
+
+:root {
+
+    /* Gradient based on your image */
+
+    --hero-gradient: linear-gradient(180deg, #e0e4e7 0%, #aab0b5 50%, #2b2b2b 100%);
+
+}
+
+
+.hero-wrapper {
+
+    padding: 20px; /* Outer spacing from screen edges */
+
+    width: 100%;
+
+    background: var(--white); /* Match the body background */
+
+}
+
+
+.hero-container {
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    height: 300px; /* Fixed height for desktop */
+
+    background: var(--hero-gradient);
+
+    border-radius: 40px; /* The signature rounded look */
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 80px;
+
+    overflow: hidden;
+
+    position: relative;
+
+}
+
+
+.hero-content {
+
+    flex: 1;
+
+    z-index: 2;
+
+    color: var(--white);
+
+}
+
+
+.hero-subtitle {
+
+    display: block;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 10px;
+
+    opacity: 0.8;
+
+}
+
+
+.hero-content h1 {
+
+    font-size: clamp(2.5rem, 5vw, 4.5rem); /* Scales text perfectly */
+
+    line-height: 1.1;
+
+    margin-bottom: 30px;
+
+    text-transform: uppercase;
+
+}
+
+
+.hero-btn {
+
+    display: inline-block;
+
+    background: var(--white);
+
+    color: var(--black);
+
+    padding: 18px 45px;
+
+    border-radius: 50px; /* Pill shape button */
+
+    font-weight: 800;
+
+    text-decoration: none;
+
+    text-transform: uppercase;
+
+    transition: transform 0.3s ease;
+
+}
+
+
+.hero-btn:hover {
+
+    transform: scale(1.05);
+
+}
+
+
+.hero-image {
+
+    flex: 1;
+
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+.hero-image img {
+
+    width: 110%; /* Slight overflow for the "pop-out" effect */
+
+    height: auto;
+
+    object-fit: contain;
+
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,0.3));
+
+}
+
+
+/* RESPONSIVE FIXES */
+
+@media (max-width: 992px) {
+
+    .hero-container {
+
+        flex-direction: column;
+
+        height: auto;
+
+        padding: 40px 20px; /* Original fixed error from previous snippet */
+
+        text-align: center;
+
+    }
+
+    
+
+    .hero-image img {
+
+        width: 100%;
+
+        margin-top: 40px;
+
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .hero-wrapper { padding: 60px 20px; }
+
+    .hero-container { 
+
+        border-radius: 25px; 
+
+        padding: 40px 20px;
+
+    }
+
+}
+
+
+/* Image placeholder to be filled in with a real image later */
+
+.hero-image-placeholder {
+
+    position: absolute;
+
+    right: 0;
+
+    top: 0;
+
+    height: 100%;
+
+    width: 50%;
+
+    background: url('../images/jordan-hero.jpg') no-repeat center center/cover;
+
+    /* This will be your high-res sneaker image */
+
+    z-index: 1;
+
+}
+
+
+/* Basic Responsiveness for mobile views */
+
+@media (max-width: 768px) {
+
+    .hero {
+
+        flex-direction: column;
+
+        justify-content: center;
+
+        text-align: center;
+
+    }
+
+    .hero-content {
+
+        padding-top: 20px;
+
+    }
+
+    .hero-image-placeholder {
+
+        opacity: 0.3; /* Image fades slightly behind text on mobile */
+
+        width: 100%;
+
+    }
+
+}
+
+
+
+
+
+
+.product-section {
+
+    padding: 40px 5%;
+
+    background: var(--white);
+
+}
+
+
+/* Section Header with Title and View All */
+
+.section-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 40px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid #f0f0f0;
+
+}
+
+
+.section-title {
+
+    text-align: left;
+
+    font-size: 1.8rem;
+
+    color: #000;
+
+    text-transform: uppercase;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 0;
+
+    font-weight: 900;
+
+}
+
+
+.view-all-link {
+
+    text-decoration: none;
+
+    color: var(--accent);
+
+    font-weight: 700;
+
+    font-size: 0.9rem;
+
+    text-transform: uppercase;
+
+    transition: 0.3s;
+
+    border-bottom: 2px solid var(--accent);
+
+    padding-bottom: 5px;
+
+}
+
+
+.view-all-link:hover {
+
+    color: var(--black);
+
+    border-bottom-color: var(--black);
+
+}
+
+/* This is the magic that creates the thumbnail grid */
+
+/* Ensure the grid doesn't collapse while loading */
+
+.product-grid {
+
+    display: grid;
+
+    /* This tells the browser: "Make as many columns as fit, at least 220px wide" */
+
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+    gap: 20px;
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+}
+
+
+/* Thumbnail Card Styling */
+
+.product-card {
+
+    background: #fff;
+
+    border: 1px solid #eee;
+
+    border-radius: 12px;
+
+    padding: 15px;
+
+    text-align: center;
+
+    transition: 0.3s;
+
+}
+
+
+.product-card:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+
+}
+
+
+.product-image-container img {
+
+    width: 100%;
+
+    height: auto;
+
+    object-fit: contain;
+
+}
+
+
+
+
+/* Container for the thumbnails */
+
+.product-grid {
+
+    display: grid;
+
+    /* This creates 4-5 columns depending on screen size */
+
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+    gap: 20px; /* Thinner gaps for a gallery look */
+
+    padding: 40px 5%;
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+}
+
+
+/* Adjusting the card to a "Thumbnail" feel */
+
+.product-card {
+
+    background: #fff;
+
+    border: 1px solid #f2f2f2;
+
+    border-radius: 8px; /* Slightly smaller radius for sharper look */
+
+    transition: 0.3s ease;
+
+}
+
+
+.product-image-container {
+
+    height: 200px; /* Reduced height for thumbnail style */
+
+    background: #f9f9f9;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+.product-img {
+
+    width: 85%; /* Shrink the shoe slightly to fit the thumbnail */
+
+}
+
+.product-details {
+
+    padding: 15px;
+
+}
+
+
+.product-name {
+
+    font-size: 0.9rem; /* Smaller font for thumbnails */
+
+    height: 40px;      /* Ensures all cards stay the same height */
+
+    overflow: hidden;
+
+}
+
+
+.product-price {
+
+    font-size: 1rem;
+
+    margin-bottom: 15px;
+
+}
+
+
+/* Product Buttons Container */
+
+.product-buttons {
+
+    display: flex;
+
+    gap: 10px;
+
+    width: 100%;
+
+}
+
+
+.add-to-cart-btn,
+
+.buy-now-btn {
+
+    flex: 1;
+
+    padding: 10px 12px;
+
+    font-size: 0.75rem;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.5px;
+
+    border: 2px solid var(--black);
+
+    border-radius: 4px;
+
+    cursor: pointer;
+
+    transition: all 0.3s ease;
+
+}
+
+
+.add-to-cart-btn {
+
+    background: var(--black);
+
+    color: var(--white);
+
+}
+
+
+.add-to-cart-btn:hover {
+
+    background: transparent;
+
+    color: var(--black);
+
+}
+
+
+.buy-now-btn {
+
+    background: var(--accent);
+
+    color: var(--white);
+
+    border-color: var(--accent);
+
+}
+
+
+.buy-now-btn:hover {
+
+    background: transparent;
+
+    color: var(--accent);
+
+}
+
+/* Default State: White Background, Black Icon */
+
+/* NOTE: This styling applies to wishlist buttons INSIDE product cards only */
+
+.product-card .wishlist-btn {
+
+    position: absolute;
+
+    top: 15px;
+
+    right: 15px;
+
+    background: none;
+
+    border: none;
+
+    width: 35px;
+
+    height: 35px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    transition: all 0.3s ease;
+
+    z-index: 10;
+
+    color: #000000;            /* Black Heart icon */
+
+    font-size: 1.5rem;
+
+}
+
+
+/* Selected State: Heart turns Red */
+
+.product-card .wishlist-btn.active {
+
+    color: var(--accent);      /* Heart turns Red (#ff4d4d) */
+
+}
+
+
+.product-card .wishlist-btn:hover {
+
+    transform: scale(1.2);
+
+}
+
+.categories-section {
+
+    padding: 40px 5%;
+
+}
+
+
+.categories-section .section-title {
+
+    text-align: left;
+
+    margin-bottom: 40px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid #f0f0f0;
+
+}
+
+
+.category-grid {
+
+    display: flex;
+
+    gap: 30px;
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    flex-wrap: wrap;
+
+    justify-content: flex-start;
+
+}
+
+
+.category-item {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+
+.category-btn {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 0;
+
+    padding: 40px 50px;
+
+    background: var(--white);
+
+    background-size: cover;
+
+    background-position: center;
+
+    background-repeat: no-repeat;
+
+    border: none;
+
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    transition: all 0.3s ease;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    font-size: 1rem;
+
+    letter-spacing: 0.8px;
+
+    color: var(--white);
+
+    min-width: 250px;
+
+    min-height: 200px;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+/* Dark overlay for text readability */
+
+.category-btn::before {
+
+    content: '';
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.4);
+
+    z-index: 1;
+
+    transition: background 0.3s ease;
+
+}
+
+
+.category-btn i,
+
+.category-btn span {
+
+    position: relative;
+
+    z-index: 2;
+
+}
+
+
+.category-label {
+
+    color: var(--black);
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    font-size: 0.9rem;
+
+    letter-spacing: 0.5px;
+
+    margin: 0;
+
+}
+
+
+.category-btn:hover::before {
+
+    background: rgba(0, 0, 0, 0.5);
+
+}
+
+
+.category-btn:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+}
+
+
+
+
+.product-image-container {
+
+    position: relative; /* This is the "anchor" for the button */
+
+    overflow: hidden;
+
+}
+
+
+.shop-btn {
+
+    position: absolute; /* This allows free movement inside the container */
+
+    bottom: 15px;       /* Distance from the bottom edge */
+
+    right: 15px;        /* Distance from the right edge */
+
+   
+
+    background: var(--white);
+
+    color: var(--black);
+
+    border: 2px solid var(--white);
+
+    padding: 10px 20px;
+
+    font-weight: 700;
+
+    font-size: 0.75rem;
+
+    text-transform: uppercase;
+
+    cursor: pointer;
+
+    border-radius: 4px;
+
+    transition: 0.3s;
+
+    z-index: 10;        /* Ensures it sits on top of the sneaker image */
+
+}
+
+
+/* Add a hover effect for a premium feel */
+
+.shop-btn:hover {
+
+    background: var(--black);
+
+    color: var(--white);
+
+    border-color: var(--black);
+
+    transform: scale(1.05);
+
+}
+
+
+
+
+/* Hover Effects */
+
+.category-card:hover .category-bg {
+
+    transform: scale(1.1); /* Zooms the background image */
+
+}
+
+
+.category-card:hover::after {
+
+    background: rgba(0, 0, 0, 0.5); /* Gets darker on hover */
+
+}
+
+
+/* Responsive for Mobile */
+
+@media (max-width: 768px) {
+
+    .category-grid { grid-template-columns: 1fr; }
+
+    .category-card { height: 300px; }
+
+}
+
+.login-btn svg {
+
+    transition: transform 0.3s ease, color 0.3s ease;
+
+    vertical-align: middle;
+
+}
+
+
+.login-btn:hover svg {
+
+    transform: scale(1.1);
+
+    color: var(--accent); /* Highlights red or your brand color on hover */
+
+}
+
+
+/* Ensure all icons in the nav align perfectly */
+
+.nav-icons {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+
+}
+
+.brands-section {
+
+    padding: 40px 5%;
+
+    background-color: #fff;
+
+}
+
+
+.brands-section .section-title {
+
+    text-align: left;
+
+    margin-bottom: 40px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid #f0f0f0;
+
+}
+
+
+.brand-grid {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 30px;
+
+    flex-wrap: wrap;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+}
+
+
+.brand-card {
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: transform 0.3s ease;
+
+}
+
+
+.brand-thumb {
+
+    width: 200px;
+
+    height: 200px;
+
+    border-radius: 50%; /* Makes it a circle */
+
+    overflow: hidden;
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background-size: cover;
+
+    background-position: center;
+
+    border: 2px solid #eee;
+
+    margin-bottom: 10px;
+
+}
+
+
+/* Dark overlay so the brand logo pops */
+
+.brand-thumb::after {
+
+    content: '';
+
+    position: absolute;
+
+    top: 0; left: 0; width: 100%; height: 100%;
+
+    background: rgba(0,0,0,0.2);
+
+    transition: background 0.3s;
+
+}
+
+
+.brand-logo-img {
+
+    width: 50%;
+
+    position: relative;
+
+    z-index: 5;
+
+    filter: brightness(0) invert(1); /* Makes black logos white */
+
+}
+
+
+.brand-card span {
+
+    font-weight: 800;
+
+    font-size: 0.75rem;
+
+    letter-spacing: 1px;
+
+}
+
+
+/* Hover Effect */
+
+.brand-card:hover {
+
+    transform: translateY(-5px);
+
+}
+
+
+.brand-card:hover .brand-thumb::after {
+
+    background: rgba(0,0,0,0.4);
+
+}
+
+.main-footer {
+
+    background-color: #000;
+
+    color: #fff;
+
+    padding: 80px 5% 20px;
+
+    margin-top: 100px;
+
+}
+
+
+.footer-container {
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    display: grid;
+
+    grid-template-columns: 2fr 1fr 1fr 2fr; /* Makes brand and newsletter wider */
+
+    gap: 50px;
+
+}
+
+
+.footer-col h4 {
+
+    font-size: 0.9rem;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 25px;
+
+    font-weight: 900;
+
+}
+
+
+.footer-col p {
+
+    color: #888;
+
+    line-height: 1.6;
+
+    font-size: 0.9rem;
+
+    margin-bottom: 20px;
+
+}
+
+
+.footer-col ul { list-style: none; }
+
+
+.footer-col ul li { margin-bottom: 12px; }
+
+
+.footer-col ul li a {
+
+    color: #888;
+
+    text-decoration: none;
+
+    transition: 0.3s;
+
+    font-size: 0.9rem;
+
+}
+
+
+.footer-col ul li a:hover { color: #fff; padding-left: 5px; }
+
+
+/* Newsletter Input */
+
+.newsletter-form {
+
+    display: flex;
+
+    gap: 10px;
+
+}
+
+
+.newsletter-form input {
+
+    flex: 1;
+
+    padding: 12px;
+
+    background: #222;
+
+    border: 1px solid #333;
+
+    color: #fff;
+
+    border-radius: 4px;
+
+}
+
+
+.newsletter-form button {
+
+    background: #fff;
+
+    color: #000;
+
+    border: none;
+
+    padding: 0 20px;
+
+    font-weight: 900;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+}
+
+
+.newsletter-form button:hover { background: #ff4d4d; color: #fff; }
+
+
+/* Social Icons */
+
+.social-links { display: flex; gap: 15px; font-size: 1.2rem; }
+
+.social-links a { color: #fff; transition: 0.3s; }
+
+.social-links a:hover { color: #ff4d4d; transform: translateY(-3px); }
+
+
+/* Bottom Copyright Bar */
+
+.footer-bottom {
+
+    border-top: 1px solid #222;
+
+    margin-top: 60px;
+
+    padding-top: 20px;
+
+    text-align: center;
+
+    font-size: 0.8rem;
+
+    color: #555;
+
+}
+
+body {
+
+    display: flex;
+
+    flex-direction: column;
+
+    min-height: 100vh;
+
+}
+
+.main-footer {
+
+    margin-top: auto; /* Pushes the footer to the very bottom */
+
+}
+
+.payment-methods {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center; /* Keeps images and font-icons aligned */
+
+    gap: 25px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.local-pay-icon {
+
+    height: 25px;       /* Set a fixed height so they all match */
+
+    width: auto;        /* Let the width adjust naturally */
+
+    filter: grayscale(100%) opacity(0.6); /* Makes them subtle/gray like the others */
+
+    transition: all 0.3s ease;
+
+    cursor: pointer;
+
+}
+
+
+/* Hover effect to bring back the brand colors */
+
+.local-pay-icon:hover {
+
+    filter: grayscale(0%) opacity(1); /* Turns colors back on */
+
+    transform: scale(1.1);
+
+}
+
+
+/* Ensure font icons match the size of your images */
+
+.payment-methods i {
+
+    font-size: 1.8rem;
+
+    color: #555;
+
+}
+
+/* This target the logo specifically inside the footer */
+
+.footer-logo img,
+
+.footer-logo a {
+
+    filter: brightness(0) invert(1); /* Turns black to pure white */
+
+    opacity: 0.9; /* Optional: makes it slightly off-white for a premium look */
+
+}
+
+
+/* Make the "LAB" text in footer logo red */
+
+.footer-logo a span {
+
+    color: var(--accent);
+
+}
+
+
+/* Main Login Button Enhancement */
+
+.auth-btn {
+
+    background: #000;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+    margin-bottom: 5px;
+
+}
+
+
+/* Social Buttons at the bottom */
+
+.social-auth {
+
+    margin-top: 20px;
+
+    display: flex;
+
+    flex-direction: column; /* Stacked looks cleaner at the bottom */
+
+    gap: 12px;
+
+}
+
+
+.social-btn {
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid #e0e0e0;
+
+    background: transparent;
+
+    color: #333;
+
+    font-size: 0.85rem;
+
+    transition: background 0.3s ease;
+
+}
+
+
+.social-btn:hover {
+
+    background: #f5f5f5;
+
+    border-color: #ccc;
+
+}
+
+
+/* Divider Styling */
+
+.divider-text {
+
+    margin: 30px 0 10px;
+
+    text-align: center;
+
+    border-bottom: 1px solid #eee;
+
+    height: 10px;
+
+}
+
+
+.divider-text span {
+
+    background: #fff;
+
+    padding: 0 15px;
+
+    color: #aaa;
+
+    font-size: 0.7rem;
+
+    font-weight: 700;
+
+}
+
+
+/* Shake Animation */
+
+@keyframes shake {
+
+    0%, 100% { transform: translateX(0); }
+
+    25% { transform: translateX(-10px); }
+
+    50% { transform: translateX(10px); }
+
+    75% { transform: translateX(-10px); }
+
+}
+
+
+/* Error State Class */
+
+.error-vibrate {
+
+    animation: shake 0.4s ease-in-out;
+
+    border: 2px solid #ff4d4d !important; /* Brand Red Highlight */
+
+}
+
+
+/* Error Text Styling */
+
+.error-message {
+
+    color: #ff4d4d;
+
+    font-size: 0.75rem;
+
+    font-weight: 700;
+
+    margin-top: 10px;
+
+    text-align: center;
+
+    display: none; /* Hidden by default */
+
+}
+
+/* TOAST CONTAINER - Moved to Top */
+
+#toast-container {
+
+    position: fixed;
+
+    top: 20px; /* Distance from top */
+
+    right: 20px;
+
+    z-index: 10000;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    pointer-events: none; /* Allows clicking through the container gap */
+
+}
+
+
+/* Mobile Adjustment */
+
+@media (max-width: 480px) {
+
+    #toast-container {
+
+        right: 10px;
+
+        left: 10px; /* Centers toast on small screens */
+
+        top: 10px;
+
+    }
+
+}
+
+
+.toast {
+
+    pointer-events: auto; /* Re-enables clicks for the toast itself */
+
+    background: #1a1a1a;
+
+    color: white;
+
+    padding: 16px 20px;
+
+    border-radius: 10px;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+
+    position: relative;
+
+    overflow: hidden;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    min-width: 300px;
+
+    /* New Slide-Down Animation */
+
+    transform: translateY(-150%);
+
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+}
+
+
+.toast.show {
+
+    transform: translateY(0);
+
+}
+
+
+/* Rest of your existing toast styles (progress bar, icons, etc.) stay the same */
+
+
+/* 1. THE CONTAINER
+
+   Controls the overflow and ensures the "snap" behavior exists. */
+
+.slider-container {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    white-space: nowrap;
+
+    padding: 20px 0;
+
+    cursor: grab; /* Visual cue for desktop users */
+
+   
+
+    /* Smooth Snapping Logic */
+
+    scroll-snap-type: x mandatory;
+
+    scroll-behavior: smooth;
+
+   
+
+    /* Hide scrollbar for a clean look (Optional) */
+
+    -ms-overflow-style: none;  /* IE/Edge */
+
+    scrollbar-width: none;     /* Firefox */
+
+}
+
+
+.slider-container:active {
+
+    cursor: grabbing;
+
+}
+
+
+.slider-container::-webkit-scrollbar {
+
+    display: none; /* Chrome, Safari, Opera */
+
+}
+
+
+/* 2. THE GRID
+
+   Switches from standard grid to a flex row to allow horizontal flow. */
+
+.slider-grid {
+
+    display: flex;
+
+    flex-wrap: nowrap;
+
+    gap: 20px;
+
+    padding-left: 5%; /* Matches your site's side margins */
+
+    padding-right: 5%;
+
+}
+
+
+/* 3. THE CARDS
+
+   Ensures cards don't shrink and snap to the center/start. */
+
+.product-card, .brand-card, .category-item {
+
+    flex: 0 0 auto; /* Prevents cards from squishing */
+
+    width: 280px;   /* Default width for Desktop */
+
+    scroll-snap-align: start;
+
+    transition: transform 0.3s ease;
+
+}
+
+
+/* 4. THE VIEW ALL BOX
+
+   Specific styling for the final "View All" card. */
+
+.view-all-card {
+
+    display: flex;
+
+    min-height: 350px; /* Matches product card height */
+
+}
+
+
+.view-all-box {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 100%;
+
+    background: #f9f9f9;
+
+    border: 2px dashed #ddd;
+
+    border-radius: 8px;
+
+    text-decoration: none;
+
+    color: #333;
+
+    transition: background 0.3s, border-color 0.3s;
+
+}
+
+
+.view-all-box:hover {
+
+    background: #111;
+
+    color: #fff;
+
+    border-color: #111;
+
+}
+
+
+.view-all-box i {
+
+    font-size: 2rem;
+
+    margin-bottom: 10px;
+
+}
+
+
+/* 5. RESPONSIVE DEVICE DETECTION */
+
+
+/* Tablets (Portrait) */
+
+@media (max-width: 992px) {
+
+    .product-card {
+
+        width: 220px;
+
+    }
+
+}
+
+
+/* Mobile Devices (Detects small screens) */
+
+@media (max-width: 600px) {
+
+    .product-card {
+
+        width: 180px; /* Smaller cards to show parts of the next card */
+
+    }
+
+
+    .slider-grid {
+
+        gap: 12px;
+
+        padding-left: 20px; /* Tighten margins for mobile */
+
+    }
+
+   
+
+    .section-title {
+
+        padding-left: 20px;
+
+    }
+
+}
+
+/* Position the wrapper relative to place arrows absolutely */
+
+.slider-wrapper {
+
+    position: relative;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+}
+
+
+/* Base Arrow Styling */
+
+.nav-arrow {
+
+    position: absolute;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 45px;
+
+    height: 45px;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.9);
+
+    border: 1px solid #ddd;
+
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+
+    cursor: pointer;
+
+    z-index: 10;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition: all 0.3s ease;
+
+}
+
+
+.nav-arrow:hover {
+
+    background: #000;
+
+    color: #fff;
+
+}
+
+
+.nav-arrow.prev { left: 10px; }
+
+.nav-arrow.next { right: 10px; }
+
+
+/* --- Device Detection for Arrows --- */
+
+
+/* Hide arrows on Touch Devices/Mobile */
+
+@media (max-width: 1024px) {
+
+    .nav-arrow {
+
+        display: none !important;
+
+    }
+
+}
+
+/* Skeleton Base Styling */
+
+.skeleton-card {
+
+    min-width: 280px;
+
+    height: 350px;
+
+    background: #eee;
+
+    border-radius: 8px;
+
+    flex: 0 0 auto;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+/* The Shimmer Animation */
+
+.skeleton-card::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    right: 0;
+
+    bottom: 0;
+
+    left: 0;
+
+    transform: translateX(-100%);
+
+    background-image: linear-gradient(
+
+        90deg,
+
+        rgba(255, 255, 255, 0) 0,
+
+        rgba(255, 255, 255, 0.2) 20%,
+
+        rgba(255, 255, 255, 0.5) 60%,
+
+        rgba(255, 255, 255, 0)
+
+    );
+
+    animation: shimmer 2s infinite;
+
+}
+
+
+@keyframes shimmer {
+
+    100% { transform: translateX(100%); }
+
+}
+
+
+/* Mobile sizing for skeletons to match your product cards */
+
+@media (max-width: 600px) {
+
+    .skeleton-card {
+
+        min-width: 180px;
+
+        height: 250px;
+
+    }
+
+}
+
+/* Scroll to Top Button */
+
+#scroll-top-btn {
+
+    position: fixed;
+
+    bottom: 30px;
+
+    right: 30px;
+
+    width: 50px;
+
+    height: 50px;
+
+    background: var(--black);
+
+    color: var(--white);
+
+    border: none;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    z-index: 1000;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 1.2rem;
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    transition: all 0.3s ease;
+
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+
+}
+
+
+#scroll-top-btn.show {
+
+    opacity: 1;
+
+    visibility: visible;
+
+}
+
+
+#scroll-top-btn:hover {
+
+    background: var(--accent);
+
+    transform: translateY(-5px);
+
+}
+
+/* Refined Slider Wrapper */
+
+.slider-wrapper {
+
+    position: relative;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 10px; /* Space for arrows */
+
+}
+
+
+/* Ensure container doesn't cut off shadows */
+
+.slider-container {
+
+    padding: 20px 0;
+
+    margin: 0 15px;
+
+}
+
+
+/* Base Arrow Styling Refinement */
+
+.nav-arrow {
+
+    background: var(--white);
+
+    color: var(--black);
+
+    border: 1px solid #ddd;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+}
+
+
+.nav-arrow:hover {
+
+    background: var(--black);
+
+    color: var(--white);
+
+    border-color: var(--black);
+
+}
+
+
+/* Fix for Category Buttons inside Sliders */
+
+.category-grid.slider-grid {
+
+    padding-bottom: 20px;
+
+}
+
+@media (max-width: 768px) {
+
+    /* 1. Fix the Navbar Stacking */
+
+    .nav-container {
+
+        flex-wrap: wrap;
+
+        gap: 10px;
+
+        padding: 10px 0;
+
+    }
+
+
+    .logo {
+
+        order: 1;
+
+        flex: 1;
+
+    }
+
+
+    .nav-icons {
+
+        order: 2;
+
+        margin-left: 0;
+
+        gap: 15px;
+
+    }
+
+
+    .search-wrapper {
+
+        order: 3;
+
+        flex: 1 1 100%; /* Full width search bar on mobile */
+
+        margin: 10px 0;
+
+        max-width: none;
+
+    }
+
+
+    /* 2. Fix the Hero Section */
+
+    .hero {
+
+        height: auto;
+
+        min-height: 400px;
+
+        padding: 40px 0;
+
+        flex-direction: column;
+
+        text-align: center;
+
+    }
+
+
+    .hero-content {
+
+        padding: 0 20px;
+
+        max-width: 100%;
+
+    }
+
+
+    .hero h1 {
+
+        font-size: 1.8rem;
+
+    }
+
+
+    .hero-image-placeholder {
+
+        position: relative;
+
+        width: 100%;
+
+        height: 250px;
+
+        margin-top: 20px;
+
+        opacity: 1; /* Keep image clear on mobile */
+
+    }
+
+
+    /* 3. Fix the Product Grid (Horizontal Scrolling) */
+
+    /* This makes the grid look like a scrollable gallery on phones */
+
+    .product-grid {
+
+        display: flex;
+
+        overflow-x: auto;
+
+        scroll-snap-type: x mandatory;
+
+        gap: 15px;
+
+        padding: 20px 5%;
+
+        -webkit-overflow-scrolling: touch;
+
+    }
+
+
+    .product-card {
+
+        min-width: 200px; /* Ensures cards don't squish */
+
+        flex: 0 0 auto;
+
+        scroll-snap-align: start;
+
+    }
+
+
+    /* 4. Fix the Footer */
+
+    .footer-container {
+
+        grid-template-columns: 1fr; /* Stack footer columns vertically */
+
+        text-align: center;
+
+        gap: 30px;
+
+    }
+
+
+    .newsletter-form {
+
+        flex-direction: column;
+
+    }
+
+
+    .social-links {
+
+        justify-content: center;
+
+    }
+
+
+    /* 5. Hide Arrows on Mobile (Users swipe instead) */
+
+    .nav-arrow {
+
+        display: none !important;
+
+    }
+
+}
+
+/* Category Swipe Adjustment */
+
+.category-grid {
+
+    display: flex;              /* Changes from grid to a row */
+
+    overflow-x: auto;           /* Enables horizontal swiping */
+
+    scroll-snap-type: x mandatory; /* Makes cards 'snap' into place */
+
+    gap: 15px;
+
+    padding: 10px 20px;
+
+    -webkit-overflow-scrolling: touch; /* Makes swipe feel smooth on iPhone */
+
+}
+
+
+.category-item {
+
+    flex: 0 0 70%;             /* Each category card takes 70% of the screen */
+
+    scroll-snap-align: center; /* Centers the card when the user stops swiping */
+
+}
+
+
+.category-btn {
+
+    min-width: 100%;           /* Ensures the button fills the card */
+
+    min-height: 150px;          /* Makes them slightly shorter for mobile */
+
+}
+
+/* Specific fix for very small screens (iPhone SE, etc) */
+
+@media (max-width: 480px) {
+
+    .product-card {
+
+        min-width: 180px;
+
+    }
+
+   
+
+    .category-btn {
+
+        min-width: 100%; /* Stack categories */
+
+    }
+
+}
+html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Stops the side-to-side shaking */
+    -webkit-text-size-adjust: 100%;
+}
+
+* {
+    max-width: 100vw; /* Ensures no element can be wider than the screen */
+}
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column; /* Stacks logo, search, and icons */
+        height: auto;
+        gap: 15px;
+        padding: 15px 0;
+    }
+
+    .search-wrapper {
+        max-width: 90%;
+        margin: 0 auto;
+    }
+
+    .hero-container {
+        height: auto !important; /* Overrides the fixed 600px height */
+        min-height: 400px;
+        flex-direction: column;
+        padding: 40px 20px;
+        text-align: center;
+    }
+
+    .hero-image img {
+        width: 100% !important;
+        margin-top: 20px;
+    }
+}
+@media (max-width: 600px) {
+    /* Prevents the 4-column desktop layout from squishing on mobile */
+    .product-grid, .category-grid, .brand-grid {
+        display: flex !important;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 20px;
+        gap: 15px;
+    }
+
+    .product-card, .brand-card, .category-item {
+        flex: 0 0 200px; /* Keeps cards at a readable size */
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr !important; /* Stacks footer columns */
+        gap: 30px;
+        text-align: center;
+    }
+
+    .newsletter-form {
+        flex-direction: column;
+    }
+}
+
+/* MOBILE-ONLY FONT PATCH */
+@media (max-width: 768px) {
+    
+    /* 1. Shrink Hero Headings (The big main text) */
+    .hero-content h1, 
+    .hero-container h1 {
+        font-size: 1.8rem !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* 2. Shrink Section Headers (e.g., "NEW ARRIVALS", "SHOP BY BRAND") */
+    .section-title {
+        font-size: 1.2rem !important;
+        letter-spacing: 1px !important;
+    }
+
+    /* 3. Shrink Product Details inside the cards */
+    .product-name {
+        font-size: 0.75rem !important;
+        height: 35px !important; /* Adjusted for smaller text */
+    }
+
+    .product-price {
+        font-size: 0.85rem !important;
+    }
+
+    /* 4. Shrink Button Text */
+    .add-to-cart-btn, 
+    .buy-now-btn, 
+    .shop-btn {
+        font-size: 0.65rem !important;
+        padding: 8px 10px !important;
+    }
+
+    /* 5. Shrink Footer Text */
+    .footer-col h4 {
+        font-size: 0.8rem !important;
+        margin-bottom: 15px !important;
+    }
+
+    .footer-col p, 
+    .footer-col ul li a {
+        font-size: 0.75rem !important;
+    }
+
+    /* 6. Shrink Category and Brand Labels */
+    .category-label, 
+    .brand-card span {
+        font-size: 0.7rem !important;
+    }
+}
+/* MOBILE IMAGE & CONTAINER SCALING PATCH */
+@media (max-width: 768px) {
+    
+    /* 1. Shrink the main Hero Sneaker */
+    .hero-image img {
+        max-width: 80% !important; /* Reduces the "pop-out" size */
+        margin: 0 auto !important;
+    }
+
+    /* 2. Shrink Product Thumbnails */
+    .product-image-container {
+        height: 140px !important; /* Original was 200px */
+    }
+
+    .product-img {
+        width: 70% !important; /* Shrinks the shoe inside the card */
+    }
+
+    /* 3. Shrink Category Buttons */
+    .category-btn {
+        min-height: 120px !important; /* Makes them less tall */
+    }
+
+    /* 4. Shrink Brand Circles */
+    .brand-thumb {
+        width: 120px !important; /* Original was 200px */
+        height: 120px !important;
+        margin: 0 auto 10px !important;
+    }
+
+    .brand-logo-img {
+        width: 40% !important; /* Shrinks the logo inside the circle */
+    }
+
+    /* 5. Shrink Nav Icons & Logos */
+    .logo a {
+        font-size: 1.2rem !important; /* Smaller text logo */
+    }
+
+    .icon-link {
+        font-size: 1rem !important; /* Smaller header icons */
+    }
+
+    .payment-methods i, 
+    .local-pay-icon {
+        height: 18px !important; /* Tiny footer icons */
+        font-size: 1.2rem !important;
+    }
+}
+/* MOBILE STRUCTURAL REPAIR: REFINED NAV & CUSTOM FOOTER */
+@media (max-width: 768px) {
+
+    /* --- 1. NAV BAR REPAIR (Grid Layout) --- */
+    .navbar {
+        height: auto !important;
+        padding: 15px 0 !important;
+    }
+
+    .nav-container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-areas: 
+            "logo icons"
+            "search search" !important;
+        gap: 15px !important;
+        width: 92% !important;
+    }
+
+    
+
+    .logo { 
+        grid-area: logo; 
+        display: flex;
+        align-items: center;
+    }
+    
+    .logo a { font-size: 1.3rem !important; }
+
+    .nav-icons { 
+        grid-area: icons; 
+        justify-content: flex-end; 
+        gap: 20px !important; 
+    }
+
+    .search-wrapper { 
+        grid-area: search; 
+        margin: 0 !important; 
+        width: 100% !important;
+    }
+
+    /* --- 2. CUSTOM COMPACT FOOTER --- */
+    .main-footer {
+        padding: 40px 5% 20px !important;
+        margin-top: 40px !important;
+    }
+
+    .footer-container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 30px !important;
+        text-align: center !important;
+    }
+
+    /* Step 1: Logo in Middle */
+    .footer-col:first-child {
+        order: 1;
+        width: 100%;
+    }
+
+    /* Step 2: Social Icons below Logo */
+    .social-links {
+        justify-content: center !important;
+        margin-top: 15px !important;
+        order: 2;
+    }
+
+    /* Step 3: Side-by-Side Wrapper for Shop & Support */
+    /* This makes the headers sit nicely together */
+    .footer-col:nth-child(2), 
+    .footer-col:nth-child(3) {
+        order: 3;
+        display: inline-block !important;
+        width: 45% !important; 
+        margin: 0 !important;
+        vertical-align: top;
+    }
+
+    /* Aligning the container to hold them side-by-side */
+    .footer-container > .footer-col:nth-child(2),
+    .footer-container > .footer-col:nth-child(3) {
+        flex: 1;
+    }
+
+    .footer-col h4 {
+        font-size: 0.8rem !important;
+        margin-bottom: 12px !important;
+        text-transform: uppercase;
+    }
+
+    .footer-col ul li {
+        margin-bottom: 8px !important;
+    }
+
+    /* Step 4: Newsletter at the bottom */
+    .footer-col:last-child {
+        order: 4;
+        width: 100%;
+    }
+
+    .newsletter-form {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .footer-bottom {
+        margin-top: 20px !important;
+        border-top: 1px solid #333;
+        padding-top: 20px !important;
+    }
+}
+/* FIXED BRAND SECTION PATCH */
+
+/* 1. PC Fix: Ensure the first brand isn't cut off */
+.brand-grid {
+    display: flex !important;
+    justify-content: center !important; /* Centers them on PC */
+    flex-wrap: wrap; /* Allows them to move to the next line if screen is small */
+    gap: 30px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* 2. Mobile Fix: Force horizontal scrolling only on small screens */
+@media (max-width: 768px) {
+    .brands-section .slider-container {
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 20px;
+    }
+
+    .brand-grid {
+        display: flex !important;
+        flex-wrap: nowrap !important; /* Forces them into one horizontal line */
+        justify-content: flex-start !important; /* Starts from the left for scrolling */
+        gap: 20px !important;
+        padding: 0 20px !important;
+    }
+
+    .brand-card {
+        flex: 0 0 auto !important; /* Prevents circles from squishing */
+        width: 130px !important; /* Consistent size for mobile */
+    }
+
+    .brand-thumb {
+        width: 100px !important;
+        height: 100px !important;
+    }
+}
+/* --- CATEGORIES & BRANDS: DESKTOP SLIDER + MOBILE 2-COLUMN GRID --- */
+
+/* 1. DESKTOP LOGIC (Screens larger than 768px) */
+@media (min-width: 769px) {
+    .category-grid, .brand-grid {
+        display: flex !important;
+        flex-wrap: nowrap !important; /* Forces one single line */
+        overflow-x: auto !important;   /* Enables horizontal scroll */
+        scroll-snap-type: x mandatory;
+        gap: 30px;
+        padding: 20px 5%;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent items from shrinking so they can overflow the screen */
+    .category-item, .brand-card {
+        flex: 0 0 280px; /* Adjust width as needed for desktop */
+        scroll-snap-align: start;
+    }
+
+    .brand-card {
+        flex: 0 0 200px; /* Brands are usually narrower than categories */
+    }
+
+    /* Hide scrollbar for a clean look on PC */
+    .category-grid::-webkit-scrollbar, 
+    .brand-grid::-webkit-scrollbar {
+        height: 6px;
+    }
+    .category-grid::-webkit-scrollbar-thumb, 
+    .brand-grid::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+    }
+}
+
+/* 2. MOBILE LOGIC (Screens 768px and below) */
+@media (max-width: 768px) {
+    .category-grid, .brand-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important; /* Two columns side-by-side */
+        gap: 15px !important;
+        padding: 10px 5% !important;
+        overflow-x: hidden !important; /* Disable scrolling on mobile */
+    }
+
+    .category-item, .brand-card {
+        width: 100% !important; /* Stretch to fill the 1fr column */
+    }
+
+    .category-btn {
+        min-width: 100% !important;
+        min-height: 140px !important;
+    }
+
+    .brand-thumb {
+        width: 100% !important; /* Makes circles responsive to the grid column */
+        max-width: 140px !important; /* Prevents them from getting too huge */
+        height: 140px !important;
+        margin: 0 auto !important;
+    }
+}
+
+/* --- SLIGHTLY LARGER PRODUCT IMAGES --- */
+
+/* 1. Increase the container height slightly (Desktop) */
+.product-image-container {
+    height: 240px !important; /* Increased from 200px to 240px */
+    padding: 5px !important;  /* Reduced padding gives the image more room */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fdfdfd; 
+    overflow: hidden;
+}
+
+/* 2. Ensure the image fills the new space perfectly */
+.product-img {
+    width: 90% !important;   /* Increased from ~70% to 90% */
+    height: 90% !important;
+    object-fit: contain !important; /* Prevents distortion */
+    transition: transform 0.3s ease; /* Smooth transition for hover */
+}
+
+/* 3. Subtle Hover Effect to make it feel even "bigger" when interacting */
+.product-card:hover .product-img {
+    transform: scale(1.08); /* Zooms in slightly on hover */
+}
+
+/* 4. Mobile adjustment (2-column grid compatible) */
+@media (max-width: 768px) {
+    .product-image-container {
+        height: 160px !important; /* Slightly bigger for mobile */
+        padding: 5px !important;
+    }
+}
+/* --- CENTERED & LARGER SEARCH BAR --- */
+
+.search-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 90% !important;      /* Increases width (adjust 90% to your liking) */
+    max-width: 800px !important; /* Prevents it from getting TOO huge on monitors */
+    margin: 15px auto !important; /* "auto" creates equal space on left and right */
+    position: relative;
+}
+
+#search-input {
+    width: 100% !important;     /* Makes the input fill the wrapper */
+    padding: 12px 20px !important; /* Makes the bar taller/thicker */
+    border-radius: 25px !important; /* Keeps the modern rounded look */
+    border: 1px solid #ddd;
+    outline: none;
+    font-size: 1rem;
+}
+
+/* Fix for the Search Icon position */
+.search-wrapper i, 
+.search-btn {
+    position: absolute;
+    right: 20px;               /* Keeps icon tucked inside the right edge */
+    color: #666;
+    cursor: pointer;
+}
+
+/* MOBILE FIX: Ensure it stays centered on phones */
+@media (max-width: 768px) {
+    .search-wrapper {
+        width: 92% !important;  /* Slightly wider on phones to use screen space */
+        margin: 10px auto !important;
+    }
+    
+    #search-input {
+        padding: 10px 15px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* --- SEARCH ICON REPAIR --- */
+
+.search-wrapper {
+    position: relative !important; /* This is the "anchor" for the icon */
+    display: flex;
+    align-items: center;
+}
+
+#search-input {
+    width: 100% !important;
+    padding-right: 45px !important; /* Creates "safety space" so text doesn't overlap the icon */
+}
+
+/* This targets the magnifying glass icon */
+.search-wrapper i, 
+.search-btn,
+.fa-magnifying-glass {
+    position: absolute !important;
+    right: 15px !important;       /* Pins it 15px from the RIGHT edge */
+    top: 50% !important;          /* Centers it vertically */
+    transform: translateY(-50%) !important; /* Perfect vertical alignment */
+    color: #888 !important;
+    pointer-events: none;         /* Ensures clicks go "through" the icon to the input */
+    z-index: 5;                   /* Keeps it on top of the input box */
+}
+.hero-wrapper {
+  background: #f8f8f8;
+  padding: 40px 20px;
+}
+.hero-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.hero-content {
+  flex: 1;
+}
+.hero-content h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+.hero-btn {
+  display: inline-block;
+  background: #111;
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+.hero-btn:hover {
+  background: #e63946;
+  transform: translateY(-3px);
+}
+.hero-carousel {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.carousel-track {
+  display: flex;
+  animation: slide 12s infinite linear;
+}
+.carousel-track img {
+  width: 300px;
+  margin: 0 15px;
+  transition: transform 0.3s ease;
+}
+.carousel-track img:hover {
+  transform: scale(1.05);
+}
+@keyframes slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@media (max-width: 768px) {
+  .hero-container {
+    flex-direction: column;
+    text-align: center;
+  }
+  .hero-carousel {
+    margin-top: 20px;
+  }
+}
+/* Hero images: reduced size + no corners */
+.hero-carousel img,
+.hero-image img {
+  width: 220px;       /* reduced from larger sizes */
+  height: auto;
+  margin: 0 10px;
+  border-radius: 0;   /* removes rounded corners */
+  transition: transform 0.3s ease;
+}
+
+.hero-carousel img:hover,
+.hero-image img:hover {
+  transform: scale(1.05); /* subtle hover zoom */
+}
+/* --- Hero Image Adjustments --- */
+.hero-carousel img,
+.hero-image img {
+  width: 220px;       /* reduced size */
+  height: auto;
+  margin: 0 10px;
+  border-radius: 0;   /* removes rounded corners */
+  background: none;   /* removes any background box */
+  box-shadow: none;   /* removes drop shadow if applied */
+  border: none;       /* removes any border */
+  transition: transform 0.3s ease;
+}
+
+.hero-carousel img:hover,
+.hero-image img:hover {
+  transform: scale(1.05); /* subtle hover zoom */
+}
+/* --- Hero Image Adjustments --- */
+.hero-carousel img,
+.hero-image img {
+  width: 220px;       /* reduced size */
+  height: auto;
+  margin: 0 10px;
+  border-radius: 20px; /* rounded corners */
+  transition: transform 0.3s ease;
+}
+
+.hero-carousel img:hover,
+.hero-image img:hover {
+  transform: scale(1.05); /* subtle hover zoom */
+}
+/* --- Hero Text Styling --- */
+.hero-content h1 {
+  font-family: 'Montserrat', sans-serif; /* modern, stylish sans-serif */
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -1px;   /* tighter spacing for bold impact */
+  text-transform: uppercase;
+  color: #111;            /* strong contrast */
+}
+
+.hero-content p {
+  font-family: 'Poppins', sans-serif;    /* clean, professional body font */
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+
+/* Positioning the Prices */
+.price-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.was-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.85rem;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff0000;
+    color: #fff;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border-radius: 3px;
+    z-index: 5;
+}
+
+/* 1. Ensure the card can grow to fit content */
+.product-card {
+    height: 480px !important; /* Set a specific height that fits everything */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    padding: 15px !important;
+    overflow: hidden !important; /* Prevents content from leaking out */
+}
+
+/* 2. Shrink the image area to give text/buttons room */
+.product-image-container {
+    height: 180px !important; /* Limit image height */
+    margin-bottom: 10px !important;
+}
+
+.product-img {
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* 3. Force buttons to be visible at the bottom */
+.product-buttons {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: auto !important; /* Pushes them to the bottom */
+    gap: 10px !important;
+    height: 45px !important;
+}
+
+.add-to-cart-btn, .buy-now-btn {
+    display: block !important;
+    height: 40px !important;
+    background-color: #000 !important; /* Temporary high contrast to see them */
+    color: #fff !important;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+/* Card Container */
+.product-card {
+    background: #ffffff;
+    border: 1px solid #eee;
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    height: 100%; /* Important for grid alignment */
+    min-height: 450px; /* Ensures enough room for all elements */
+    transition: transform 0.3s ease;
+    position: relative;
+}
+
+/* Image Section */
+.product-image-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.product-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+}
+
+/* Details Section */
+.product-details {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* This pushes the buttons container down */
+}
+
+/* Prices */
+.price-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.current-price {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #000;
+}
+
+.was-price {
+    font-size: 0.9rem;
+    color: #999;
+    text-decoration: line-through;
+}
+
+/* Buttons at the bottom */
+.product-buttons {
+    margin-top: auto; /* Pushes buttons to the bottom edge of the card */
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.add-to-cart-btn, .buy-now-btn {
+    flex: 1;
+    padding: 12px 0;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+}
+
+.add-to-cart-btn { background: #f0f0f0; color: #000; }
+.buy-now-btn { background: #000; color: #fff; }
+
+
+    /* 1. Make the whole card look clickable */
+.product-card.clickable-card {
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    /* Since we removed buttons, we can shrink the min-height */
+    min-height: 360px; 
+}
+
+.product-card.clickable-card:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
+}
+
+.product-image-container {
+    position: relative;
+    width: 100%;
+    height: 180px; /* Reduced slightly since buttons are gone */
+    margin-bottom: 12px;
+}
+
+/* 2. Move Wishlist Button to Top-Left */
+.wishlist-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px; /* Crucial change */
+    background: rgba(255,255,255,0.8); /* Semi-transparent background */
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5; /* Ensures it stays above image */
+    transition: background 0.2s;
+}
+
+.wishlist-btn:hover {
+    background: rgba(255,255,255,1);
+}
+
+.wishlist-btn .fa-heart {
+    color: #555;
+    font-size: 1.1rem;
+}
+
+.wishlist-btn.active .fa-heart {
+    color: #ff4747; /* Red when active */
+}
+
+/* 3. Discount Badge remains on Top-Right */
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff4747;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.75rem;
+    z-index: 4;
+}
+/* 1. The Card - Keep height auto so it wraps content */
+.product-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    height: auto !important; /* Forces the card to end after content */
+    width: 100%;
+    max-width: 240px; 
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+/* 2. The Thumbnail - Fixed height to keep grids aligned */
+.product-image-container {
+    height: 140px; 
+    position: relative;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.product-img {
+    max-height: 100%;
+    width: auto;
+    object-fit: contain;
+    transform: scale(1.1);
+}
+/* 3. The Details - This is the fix for the cut-off title */
+.product-details {
+    display: flex;
+    flex-direction: column;
+    padding: 0 2px;
+}
+.brand-tag {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.product-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 4px 0 10px 0;
+    line-height: 1.3;
+    /* FIX: Remove height limits and allow wrapping */
+    height: auto !important; 
+    max-height: none !important; 
+    overflow: visible !important;
+    white-space: normal !important; /* Allows text to go to next line */
+    display: block !important; 
+}
+/* 4. THE ACTION BAR: Pull it up */
+.bottom-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    /* REMOVE margin-top: auto; - This was the 'ghost' pushing it down */
+    margin-top: 5px; 
+    border-top: 1px solid #f9f9f9;
+}
+
+/* Ensure icons are small and aligned */
+.icon-btn {
+    font-size: 1rem;
+    color: #333;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.price-stack {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+}
+
+.current-price {
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.slashed-red {
+    color: #ff0000;
+    text-decoration: line-through;
+    font-size: 0.75rem;
+}
+.header-container {
+    display: flex;
+    width: 100%;
+    /* This ensures the three columns utilize the full width */
+    justify-content: space-between; 
+    align-items: center;
+    /* Reduce this padding if the icon isn't far enough left */
+    padding: 0 30px; 
+    max-width: 100%; /* Ensures it spans the whole screen */
+}
+
+.header-col {
+    /* Side columns take up equal space to keep center balanced */
+    flex: 1; 
+    display: flex;
+    align-items: center;
+}
+
+.col-left {
+    /* Pins the search icon to the absolute start of the container */
+    justify-content: flex-start; 
+    gap: 40px; /* Space between the search icon and 'HOME' */
+}
+
+.col-center {
+    flex: 0; /* Center column only takes up logo width */
+    justify-content: center;
+}
+
+.col-right {
+    /* Pins the bag icon to the absolute end of the container */
+    justify-content: flex-end; 
+    gap: 30px;
+}
+
+/* Icon Specifics */
+.search-trigger {
+    margin-right: 10px; /* Fine-tune the gap if needed */
+    display: flex;
+    align-items: center;
+}
+
+.search-trigger i {
+    font-size: 1.4rem;
+    font-weight: 300; /* Matches the thin look in image_048aee.png */
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SNEAKERLAB | Premium Drops</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="announcement-bar">
+        <p id="announcement-text">FREE SHIPPING ON ALL ORDERS OVER $150!</p>
+    </div>
+    <div class="search-overlay" id="search-overlay">
+    <div class="search-container">
+        <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="SEARCH SNEAKERS..." id="search-input">
+            <div id="search-results" class="search-results-dropdown"></div>
+        </div>
+        <span class="search-close" id="search-close">&times;</span>
+    </div>
+</div>
+<header class="main-header">
+    <div class="header-container">
+        
+        <div class="header-left">
+            <div class="hamburger desktop-hide" id="mobile-menu-trigger">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="icon-search mobile-hide">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+        </div>
+
+        <div class="header-center-group">
+            <nav class="desktop-nav mobile-hide">
+                <a href="index.html">HOME</a>
+                <div class="has-dropdown">
+                    <a href="javascript:void(0)" class="dropdown-trigger">CATALOG <i class="fa-solid fa-chevron-down"></i></a>
+                  <ul class="submenu">
+            <li><a href="sneakers.html">Sneakers</a></li>
+            <li><a href="slides.html">Slides</a></li>
+            <li><a href="latest-arrivals.html">Latest Arrivals</a></li>
+            <li><a href="trending.html">Curated for you</a></li>
+        </ul>
+                </div>
+            </nav>
+
+            <h1 class="brand-logo">SNEAKER<span>LAB</span></h1>
+
+            <nav class="desktop-nav mobile-hide">
+                <div class="has-dropdown">
+                    <a href="javascript:void(0)" class="dropdown-trigger">SHOP BY BRAND<i class="fa-solid fa-chevron-down"></i></a>
+                    <ul class="submenu">
+        <li><a href="nike-collection.html">Nike</a></li>
+        <li><a href="jordan-collection.html">Jordan</a></li>
+        <li><a href="adidas-collection.html">Adidas</a></li>
+        <li><a href="newbalance-collection.html">New Balance</a></li>
+        </ul>
+                </div>
+                <div class="has-dropdown">
+                    <a href="javascript:void(0)" class="dropdown-trigger">HELP <i class="fa-solid fa-chevron-down"></i></a>
+                    <ul class="submenu">
+            <li><a href="shipping-policy.html">Shipping</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="returns.html">Returns</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+                </div>
+            </nav>
+        </div>
+
+        <div class="header-right">
+            <div class="utility-icons">
+                <a href="#" class="icon-search desktop-hide"><i class="fa-solid fa-magnifying-glass"></i></a>
+                <a href="account.html" class="icon-user mobile-hide"><i class="fa-regular fa-user"></i></a>
+                <a href="cart.html" class="icon-cart">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    <span class="cart-count">2</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <span class="drawer-close" id="drawer-close">&times;</span>
+        </div>
+        <ul class="mobile-nav-links">
+            <li><a href="index.html">HOME</a></li>
+            <li class="has-dropdown">
+                <a href="javascript:void(0)" class="dropdown-trigger">CATALOG <i class="fa-solid fa-chevron-down"></i></a>
+                <ul class="submenu">
+            <li><a href="sneakers.html">Sneakers</a></li>
+            <li><a href="slides.html">Slides</a></li>
+            <li><a href="latest-arrivals.html">Latest Arrivals</a></li>
+            <li><a href="trending.html">Curated for you</a></li>
+        </ul>
+            </li>
+            <li class="has-dropdown">
+                <a href="javascript:void(0)" class="dropdown-trigger">SHOP BY BRAND<i class="fa-solid fa-chevron-down"></i></a>
+                    <ul class="submenu">
+        <li><a href="nike-collection.html">Nike</a></li>
+        <li><a href="jordan-collection.html">Jordan</a></li>
+        <li><a href="adidas-collection.html">Adidas</a></li>
+        <li><a href="newbalance-collection.html">New Balance</a></li>
+        </ul>
+            </li>
+            <li class="has-dropdown">
+                <a href="javascript:void(0)" class="dropdown-trigger">HELP <i class="fa-solid fa-chevron-down"></i></a>
+                  <ul class="submenu">
+            <li><a href="shipping-policy.html">Shipping</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="returns.html">Returns</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+        <div class="drawer-footer">
+            <a href="account.html" class="drawer-btn btn-signin">Sign In</a>
+            <a href="account.html" class="drawer-btn btn-register">Register</a>
+        </div>
+    </div>
+  
+        <h2>SHOP BY BRAND</h2>
+        <a href="catalog.html" class="view-link">View All <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+
+    <div class="brand-grid">
+        <a href="jordan-collection.html" class="brand-card card-jordan">
+            <div class="brand-overlay">
+                <h3>JORDAN</h3>
+                <span>Shop the Collection</span>
+            </div>
+        </a>
+        <a href="nike-collection.html" class="brand-card card-nike">
+            <div class="brand-overlay">
+                <h3>NIKE</h3>
+                <span>Everything Swoosh</span>
+            </div>
+        </a>
+        <a href="adidas-collection.html" class="brand-card card-adidas">
+            <div class="brand-overlay">
+                <h3>ADIDAS</h3>
+                <span>The Three Stripes</span>
+            </div>
+        </a>
+    </div>
+</section>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

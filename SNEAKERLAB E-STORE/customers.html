@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SNEAKERLAB Admin | Customers</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-style.css">
+</head>
+<body>
+
+  <nav class="sidebar">
+    <div class="sidebar-brand"><i class="fa-solid fa-sneaker"></i> SNEAKER<span>LAB</span></div>
+    <div class="nav-links">
+        <a href="admin.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+        <a href="inventory.html" class="nav-item"><i class="fa-solid fa-box"></i> Products</a>
+        <a href="orders.html" class="nav-item"><i class="fa-solid fa-receipt"></i> Orders</a>
+        <a href="customers.html" class="nav-item"><i class="fa-solid fa-users"></i> Customers</a>
+        <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> Settings</a>
+        <div class="nav-divider"></div>
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-eye"></i> View Store</a>
+    </div>
+</nav>
+
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>Customers</h1>
+        </header>
+
+        <div class="card">
+            <table class="order-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Location</th>
+                        <th>Orders</th>
+                        <th>Total Spent</th>
+                        <th>Last Order</th>
+                    </tr>
+                </thead>
+                <tbody id="customer-list">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase-config.js"></script>
+
+<script src="js/customers.js"></script>
+    <script>
+        const db = firebase.firestore();
+
+        async function loadCRM() {
+            const snapshot = await db.collection("orders").get();
+            const customers = {};
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const email = data.customerEmail;
+                
+                if (!customers[email]) {
+                    customers[email] = {
+                        name: data.customerName,
+                        location: data.shippingAddress.city || 'N/A',
+                        orderCount: 0,
+                        totalSpent: 0,
+                        lastDate: data.createdAt.toDate()
+                    };
+                }
+                customers[email].orderCount++;
+                customers[email].totalSpent += parseFloat(data.total.replace('$', ''));
+            });
+
+            const listBody = document.getElementById('customer-list');
+            listBody.innerHTML = Object.keys(customers).map(email => `
+                <tr>
+                    <td><strong>${customers[email].name}</strong></td>
+                    <td>${email}</td>
+                    <td>${customers[email].location}</td>
+                    <td>${customers[email].orderCount} orders</td>
+                    <td>$${customers[email].totalSpent.toFixed(2)}</td>
+                    <td>${customers[email].lastDate.toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+        window.onload = loadCRM;
+    </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curated For You - SNEAKERLAB</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: var(--gray); }
+        .arrivals-container { max-width: 1200px; margin: 40px auto; padding: 20px; }
+        .arrivals-header { text-align: center; margin-bottom: 50px; }
+        .arrivals-header h1 { font-size: 2.5rem; color: var(--black); margin-bottom: 15px; }
+        .arrivals-header p { color: #666; font-size: 1.05rem; max-width: 700px; margin: 0 auto 20px; line-height: 1.6; }
+
+        /* GRID SYSTEM */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 0;
+            margin-bottom: 50px;
+        }
+
+        /* CARD STYLING */
+        .product-card { background: #fff; border: 1px solid #f2f2f2; border-radius: 8px; transition: 0.3s ease; position: relative; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .product-image-container { height: 200px; background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; border-radius: 8px 8px 0 0; cursor: pointer; }
+        .product-img { width: 85%; height: auto; object-fit: contain; }
+        .product-details { padding: 15px; }
+        .brand-tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 700; margin-bottom: 8px; display: block; }
+        .product-name { font-size: 0.9rem; height: 40px; overflow: hidden; font-weight: 700; color: var(--black); margin-bottom: 8px; }
+        .product-price { font-size: 1rem; font-weight: 700; color: var(--black); margin-bottom: 15px; }
+
+        /* BUTTONS */
+        .product-buttons { display: flex; gap: 10px; width: 100%; }
+        .add-to-cart-btn, .buy-now-btn { flex: 1; padding: 10px 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; border: 2px solid var(--black); border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        .add-to-cart-btn { background: var(--black); color: var(--white); }
+        .add-to-cart-btn:hover { background: transparent; color: var(--black); }
+        .buy-now-btn { background: var(--accent); color: var(--white); border-color: var(--accent); }
+        .buy-now-btn:hover { background: transparent; color: var(--accent); }
+
+        /* WISHLIST HEART */
+        .wishlist-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5rem; cursor: pointer; transition: 0.3s; color: #000; z-index: 10; }
+        .wishlist-btn.active { color: var(--accent); }
+
+        /* PAGINATION */
+        .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 40px; }
+        .pagination button { padding: 10px 15px; border: 1px solid #ddd; background: white; cursor: pointer; font-weight: 600; border-radius: 4px; }
+        .pagination button.active { background: black; color: white; border-color: black; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .no-results { text-align: center; padding: 60px 0; grid-column: 1 / -1; color: #666; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-icons">
+                <a href="index.html" class="icon-link"><i class="fa-solid fa-house"></i></a>
+                <a href="wishlist.html" class="icon-link">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="wishlist-count">0</span>
+                </a>
+                <a href="cart.html" class="icon-link">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count">0</span>
+                </a>
+            </div>
+            <div class="logo"><a href="index.html">SNEAKER<span class="logo-accent">LAB</span></a></div>
+        </div>
+    </nav>
+
+    <div class="arrivals-container">
+        <div class="arrivals-header">
+            <h1>Curated For You</h1>
+            <p>Handpicked selections tailored to your tastes. Trending heat only.</p>
+        </div>
+
+        <div id="products-grid" class="products-grid">
+            </div>
+        <div id="pagination" class="pagination"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/script.js"></script>
+
+    <script>
+        let allTrending = [];
+        let currentPage = 1;
+        const itemsPerPage = 12; // Increased for the "View All" page
+
+        async function loadTrendingProducts() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '<div class="no-results">Loading the collection...</div>';
+
+            try {
+                // Fetch ONLY trending items from your database
+                const { data, error } = await _supabase
+                    .from('products')
+                    .select('*')
+                    .eq('category', 'trending')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allTrending = data;
+                renderDisplay();
+                renderPagination();
+
+            } catch (err) {
+                console.error("Fetch error:", err.message);
+                grid.innerHTML = '<div class="no-results">Error connecting to database.</div>';
+            }
+        }
+
+        function renderDisplay() {
+            const grid = document.getElementById('products-grid');
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = allTrending.slice(start, end);
+
+            if (pageItems.length === 0) {
+                grid.innerHTML = '<div class="no-results"><h2>No trending items found.</h2></div>';
+                return;
+            }
+
+            const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+
+            grid.innerHTML = pageItems.map(product => {
+                const isWishlisted = wishlist.some(item => item.id === product.id);
+                
+                // Clean product data for function passing
+                const productData = {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image_url: product.image_url,
+                    brand: product.brand
+                };
+                const productJSON = JSON.stringify(productData).replace(/"/g, '&quot;');
+
+                return `
+                <div class="product-card">
+                    <div class="product-image-container" onclick="window.location.href='product-details.html?id=${product.id}'">
+                        <button class="wishlist-btn ${isWishlisted ? 'active' : ''}" 
+                                onclick="event.stopPropagation(); toggleWishlist(this, ${productJSON})">
+                            <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                        </button>
+                        <img src="${product.image_url || 'images/placeholder.jpg'}" alt="${product.name}" class="product-img">
+                    </div>
+                    <div class="product-details">
+                        <span class="brand-tag">${product.brand || 'TRENDING'}</span>
+                        <h3 class="product-name">${product.name}</h3>
+                        <p class="product-price">$${parseFloat(product.price).toFixed(2)}</p>
+                        <div class="product-buttons">
+                            <button class="add-to-cart-btn" onclick='addToCart(${productJSON})'>Add</button>
+                            <button class="buy-now-btn" onclick='buyNow(${productJSON})'>Buy</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderPagination() {
+            const nav = document.getElementById('pagination');
+            const total = Math.ceil(allTrending.length / itemsPerPage);
+            if (total <= 1) { nav.innerHTML = ''; return; }
+
+            let html = `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-left"></i></button>`;
+            for (let i = 1; i <= total; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+            html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === total ? 'disabled' : ''}><i class="fa-solid fa-chevron-right"></i></button>`;
+            nav.innerHTML = html;
+        }
+
+        function changePage(p) {
+            currentPage = p;
+            renderDisplay();
+            renderPagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTrendingProducts();
+            // Global counter updates from script.js
+            if (typeof updateCartCounters === 'function') updateCartCounters();
+            if (typeof updateWishlistCounters === 'function') updateWishlistCounters();
+        });
+    </script>
+</body>
+</html>

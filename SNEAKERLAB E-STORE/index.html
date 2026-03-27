@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SNEAKERLAB | Premium Drops</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <style>
+    body { box-sizing: border-box; }
+
+    /* FONTS */
+    .font-display { font-family: 'Bebas Neue', sans-serif; }
+    .font-body { font-family: 'Inter', sans-serif; }
+
+    /* ANIMATIONS */
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-15deg); }
+      50% { transform: translateY(-20px) rotate(-15deg); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideRight {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
+      50% { box-shadow: 0 0 40px rgba(220, 38, 38, 0.7); }
+    }
+
+    /* ANIMATION CLASSES */
+    .animate-float { animation: float 4s ease-in-out infinite; }
+    .animate-slide-up { animation: slideUp 0.8s ease-out forwards; }
+    .animate-slide-right { animation: slideRight 0.8s ease-out forwards; }
+    .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+
+    /* HERO STYLES */
+    .sneaker-shadow {
+      filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.5));
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+   /* --- CLEANED SLIDER STYLES --- */
+.index-trust-section {
+    padding: 60px 20px;
+    background: #ffffff;
+    border-top: 1px solid #f0f0f0;
+}
+
+.indexTrustSwiper {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.trust-content {
+    text-align: center;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Base style for icons */
+.trust-content i {
+    font-size: 3rem;
+    color: #111;
+    margin-bottom: 20px;
+    display: block;
+}
+
+/* WHATSAPP "LIVE" PULSE */
+.whatsapp-btn-wrapper {
+    position: relative;
+    display: inline-block;
+    line-height: 0; /* Prevents extra spacing */
+}
+
+.whatsapp-btn-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    background-color: rgba(37, 211, 102, 0.3);
+    border-radius: 50%;
+    z-index: 0;
+    animation: whatsapp-pulse 2s infinite;
+}
+
+.fa-whatsapp.text-green-500 {
+    color: #25D366 !important;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes whatsapp-pulse {
+    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+}
+
+/* CENTERING THE DOTS & ARROWS */
+.index-slider-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* This is what centers the whole group */
+    gap: 25px;
+    margin-top: 30px;
+    width: 100%;
+}
+
+.swiper-button-prev-index, 
+.swiper-button-next-index {
+    position: static !important; /* Forces them to stay in the flex row */
+    font-size: 1.2rem;
+    color: #000;
+    cursor: pointer;
+}
+
+.swiper-pagination-index {
+    position: static !important; /* Allows it to sit between arrows */
+    width: auto !important;
+    display: flex !important;
+    gap: 8px;
+}
+
+.swiper-pagination-index .swiper-pagination-bullet {
+    width: 10px;
+    height: 10px;
+    background: #ccc;
+    opacity: 1;
+}
+
+.swiper-pagination-index .swiper-pagination-bullet-active {
+    background: #000;
+}
+/* Fix the invisible search wall */
+.search-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 9999;
+    display: none; /* Ensure it is GONE when not active */
+}
+
+.search-overlay.active {
+    display: flex !important;
+}
+
+/* Force the header to the front of the line */
+.main-header {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 50; /* Above the hero, below the search overlay */
+    background: #ffffff;
+}
+
+#header-cart-btn {
+    pointer-events: auto !important; /* Forces the button to be clickable */
+    position: relative;
+    z-index: 60;
+}
+/* --- INTEGRATED CONTACT & FOOTER STYLES --- */
+
+/* 1. Visibility & Basic Reset */
+.no-underline {
+    text-decoration: none !important;
+}
+
+/* Force icons to be visible inside the black boxes (Fixes the "Invisible Icon" issue) */
+.drawer-contact-info i {
+    color: #ffffff !important; 
+    display: inline-block !important;
+}
+
+/* 2. Contact Rows (Phone & Email) */
+.drawer-contact-info a {
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+/* Visual feedback for mobile tapping since hover doesn't exist */
+.drawer-contact-info a:active {
+    opacity: 0.6;
+    transform: scale(0.98);
+}
+
+/* 3. Social Media Pills (Large for big fingers) */
+.social-pill {
+    width: 48px;  /* Increased from 42px for better mobile UX */
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f4f4;
+    color: #000000 !important; /* Force black icon on light gray bg */
+    border-radius: 50%; /* Circle shape stands out better */
+    font-size: 1.2rem;
+    text-decoration: none;
+    border: 1px solid #eeeeee;
+    transition: background 0.2s ease;
+}
+
+.social-pill i {
+    color: #000000 !important; /* Ensure social icons stay black */
+}
+
+/* 4. Compact Account Buttons (Saves Vertical Space) */
+.account-btn-slim {
+    flex: 1; /* Makes both buttons equal width */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 0;
+    background: #000000;
+    color: #ffffff !important;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 900;
+    text-decoration: none;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.btn-outline {
+    background: transparent !important;
+    border: 1.5px solid #000000;
+    color: #000000 !important;
+}
+
+.btn-outline i {
+    color: #000000 !important;
+}
+
+/* 5. Mobile Layout Fixes */
+@media (max-width: 600px) {
+    .drawer-contact-info {
+        padding-bottom: 40px; /* Extra space for iPhone 'home bar' */
+    }
+    
+    .drawer-contact-info .flex.gap-3 {
+        gap: 15px; /* Spreads social icons out for easier clicking */
+    }
+}
+/* Add this to your style block */
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Prevents tiny side-scrolling that triggers browser UI */
+    background-color: #000; /* Matches your footer so the transition is seamless */
+}
+
+footer {
+    /* Ensures the footer takes up the necessary space but doesn't overflow */
+    margin-bottom: 0 !important;
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom)) !important;
+}
+
+/* This hides the invisible security frame that usually sits at the very bottom */
+iframe {
+    display: none !important;
+}
+/* THE "PEEK" ENGINE - Place in your CSS file */
+#latest-drops, #curated-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory;
+    gap: 16px;
+    padding: 20px 0;
+    scrollbar-width: none;
+}
+
+#latest-drops::-webkit-scrollbar, 
+#curated-grid::-webkit-scrollbar { display: none; }
+
+#latest-drops > div, #curated-grid > div {
+    flex: 0 0 75vw !important; /* The 75% width for the "peek" */
+    scroll-snap-align: start;
+}
+
+@media (min-width: 1024px) {
+    #latest-drops, #curated-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr);
+        overflow-x: hidden !important;
+    }
+    #latest-drops > div, #curated-grid > div { flex: none !important; width: auto !important; }
+}
+/* MOBILE DRAWER BASE */
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: -100%; /* Hidden by default */
+    width: 85%;
+    max-width: 400px;
+    height: 100%;
+    background: #fff;
+    z-index: 100;
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 20px 0 50px rgba(0,0,0,0.2);
+    overflow-y: auto;
+}
+
+.mobile-drawer.active {
+    left: 0; /* Slide in */
+}
+
+/* OVERLAY BACKDROP (Crucial to prevent freezing) */
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.drawer-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* SEARCH OVERLAY FIX */
+.search-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 200;
+    display: none; /* Physical removal when not in use */
+    align-items: center;
+    justify-content: center;
+}
+
+.search-overlay.active {
+    display: flex;
+}
+
+  </style>
+ </head>
+ <body class="bg-white text-black">
+
+  <div class="announcement-bar">
+    <p id="announcement-text">FREE SHIPPING ON ALL ORDERS OVER $150!</p>
+  </div>
+
+  <div class="search-overlay" id="search-overlay">
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <i class="fa-solid fa-magnifying-glass"></i> 
+        <input type="text" placeholder="SEARCH SNEAKERS..." id="search-input">
+        <div id="search-results" class="search-results-dropdown"></div>
+      </div>
+      <span class="search-close" id="search-close">×</span>
+    </div>
+  </div>
+
+  <header class="main-header">
+    <div class="header-container">
+      <div class="header-left">
+        <div class="hamburger desktop-hide" id="mobile-menu-trigger">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="icon-search mobile-hide">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+      </div>
+
+      <div class="header-center-group">
+        <nav class="desktop-nav mobile-hide">
+          <a href="index.html">HOME</a>
+          <div class="has-dropdown">
+            <a href="javascript:void(0)" class="dropdown-trigger">CATALOG <i class="fa-solid fa-chevron-down"></i></a>
+            <ul class="submenu">
+              <li><a href="sneakers.html">Sneakers</a></li>
+              <li><a href="slides.html">Slides</a></li>
+              <li><a href="caps.html">Caps</a></li>
+              <li><a href="jersey.html">Soccer Jersey</a></li>
+            </ul>
+          </div>
+        </nav>
+
+        <h1 class="brand-logo">SNEAKER<span>LAB</span></h1>
+
+        <nav class="desktop-nav mobile-hide">
+          <div class="has-dropdown">
+            <a href="javascript:void(0)" class="dropdown-trigger">SHOP BY BRAND <i class="fa-solid fa-chevron-down"></i></a>
+            <ul class="submenu">
+              <li><a href="nike-collection.html">Nike</a></li>
+              <li><a href="jordan-collection.html">Jordan</a></li>
+              <li><a href="adidas-collection.html">Adidas</a></li>
+              <li><a href="newbalance-collection.html">New Balance</a></li>
+            </ul>
+          </div>
+          <div class="has-dropdown">
+            <a href="javascript:void(0)" class="dropdown-trigger">HELP <i class="fa-solid fa-chevron-down"></i></a>
+            <ul class="submenu">
+              <li><a href="shipping-policy.html">Shipping</a></li>
+              <li><a href="faq.html">FAQ</a></li>
+              <li><a href="returns.html">Returns</a></li>
+              <li><a href="contact.html">Contact</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+
+      <div class="header-right">
+        <div class="utility-icons flex items-center gap-2">
+          <a href="account.html" id="mobile-account-btn" class="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 overflow-hidden transition-all active:scale-90">
+              <div id="user-initials-circle" class="text-[10px] font-black uppercase flex items-center justify-center">
+                  <i class="fa-regular fa-user text-sm"></i>
+              </div>
+          </a>
+          <button id="header-cart-btn" class="icon-cart relative z-[100] cursor-pointer border-none bg-transparent p-2">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span id="cart-badge" class="cart-count absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center hidden">0</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header> <div class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header">
+      <span class="drawer-close" id="drawer-close">×</span>
+    </div>
+
+    <ul class="mobile-nav-links">
+      <li><a href="index.html">HOME</a></li>
+      <li class="has-dropdown">
+        <a href="javascript:void(0)" class="dropdown-trigger">CATALOG <i class="fa-solid fa-chevron-down"></i></a>
+        <ul class="submenu">
+          <li><a href="sneakers.html">Sneakers</a></li>
+          <li><a href="slides.html">Slides</a></li>
+          <li><a href="caps.html">Caps</a></li>
+          <li><a href="jersey.html">Soccer Jersey</a></li>
+        </ul>
+      </li>
+      <li class="has-dropdown">
+        <a href="javascript:void(0)" class="dropdown-trigger">SHOP BY BRAND <i class="fa-solid fa-chevron-down"></i></a>
+        <ul class="submenu">
+          <li><a href="nike-collection.html">Nike</a></li>
+          <li><a href="jordan-collection.html">Jordan</a></li>
+          <li><a href="adidas-collection.html">Adidas</a></li>
+          <li><a href="newbalance-collection.html">New Balance</a></li>
+        </ul>
+      </li>
+      <li class="has-dropdown">
+        <a href="javascript:void(0)" class="dropdown-trigger">HELP <i class="fa-solid fa-chevron-down"></i></a>
+        <ul class="submenu">
+          <li><a href="shipping-policy.html">Shipping</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="returns.html">Returns</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </li>
+    </ul>
+
+    <div class="drawer-contact-info" style="padding: 20px; border-top: 1px solid #eee; margin-top: 20px;">
+      <p style="font-size: 9px; font-weight: 900; color: #999; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px;">Contact Details</p>
+      
+      <a href="tel:+263786429446" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: black; margin-bottom: 15px;">
+        <div style="background: black; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+          <i class="fa-solid fa-phone" style="color: white; font-size: 12px;"></i>
+        </div>
+        <p style="font-size: 12px; font-weight: bold; margin: 0;">+263 786 429 446</p>
+      </a>
+
+      <a href="mailto:support@sneakerlab.com" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: black; margin-bottom: 20px;">
+        <div style="background: black; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+          <i class="fa-solid fa-envelope" style="color: white; font-size: 12px;"></i>
+        </div>
+        <p style="font-size: 12px; font-weight: bold; margin: 0;">support@sneakerlab.com</p>
+      </a>
+
+      <p style="font-size: 9px; font-weight: 900; color: #999; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;">Follow Us</p>
+      <div style="display: flex; gap: 12px;">
+        <a href="#" style="width: 38px; height: 38px; border-radius: 50%; background: #000; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none;"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" style="width: 38px; height: 38px; border-radius: 50%; background: #000; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none;"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" style="width: 38px; height: 38px; border-radius: 50%; background: #000; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none;"><i class="fa-brands fa-tiktok"></i></a>
+      </div>
+    </div>
+
+    <div class="drawer-footer" style="padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+      <div id="drawer-user-status">
+          <a href="account.html" class="no-underline" style="display: block; background: black; color: white !important; text-align: center; padding: 14px 0; font-weight: 900; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px;">
+              Sign In
+          </a>
+      </div>
+      <a href="account.html" class="no-underline" style="display: block; background: white; color: black !important; text-align: center; padding: 14px 0; font-weight: 900; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border: 2px solid black; border-radius: 4px;">
+          Register
+      </a>
+    </div>
+  </div> <div id="drawer-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none;"></div>
+ <!-- HERO SECTION -->
+<div id="hero-wrapper" class="w-full overflow-hidden">
+  <section id="hero-section" class="relative w-full overflow-hidden py-8 lg:py-0" style="background: #0D0D0D; min-height: 400px; display: flex; align-items: center;">
+    
+    <div class="absolute inset-0 overflow-hidden">
+      <div class="absolute top-10 left-10 w-64 h-64 rounded-full opacity-10 blur-3xl" style="background: #dc2626;"></div>
+      <div class="absolute bottom-10 right-10 w-72 h-72 rounded-full opacity-10 blur-3xl" style="background: #dc2626;"></div>
+    </div>
+
+    <div class="relative z-10 flex flex-col lg:flex-row items-center justify-center lg:justify-between px-4 lg:px-12 w-full gap-8 lg:gap-4">
+      
+      <div class="flex-none lg:flex-1 max-w-xl text-center lg:text-left">
+        <h1 id="headline" class="font-display leading-tight tracking-tight mb-2 animate-slide-up" style="color: #FFFFFF;">
+          STEP INTO<br><span class="gradient-text">GREATNESS</span>
+        </h1>
+        <p id="subheadline" class="text-xs lg:text-sm mb-4 max-w-md mx-auto lg:mx-0 animate-slide-up opacity-80" style="color: #A0A0A0; animation-delay: 0.1s;">
+          Engineered for performance. Designed for style.
+        </p>
+        <button id="cta-button" class="px-6 py-3 rounded-full font-semibold text-xs transition-all hover:scale-105" style="background: #dc2626; color: #FFFFFF;">
+          SHOP NOW
+        </button>
+      </div>
+
+      <div class="flex-none lg:flex-1 relative w-full overflow-hidden">
+        <div id="hero-slider-track" class="flex gap-4 animate-infinite-scroll">
+          </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+<!-- shop by brand SECTION -->
+ <section id="brand-discovery" class="py-16 px-4 lg:px-12 bg-white">
+    <div class="flex flex-col mb-12 text-center lg:text-left">
+        <h2 class="text-black text-2xl lg:text-4xl font-display uppercase tracking-tighter font-black">Shop by Brand</h2>
+        <p class="text-zinc-500 text-sm mt-2">Filter the collection by your favorite brand.</p>
+        <div class="h-1 w-20 bg-red-600 mt-4 mx-auto lg:mx-0"></div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <a href="nike-collection.html" class="brand-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/nikelogo.jpg" alt="Nike" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+        </a>
+
+        <a href="jordan-collection.html" class="brand-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/jordanlogo.jpg" alt="Jordan" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+        </a>
+         <a href="adidas.html" class="brand-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/adidaslogo.jpg" alt="Jordan" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+        </a>
+         <a href="newbalance.html" class="brand-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/nblogo.jpg" alt="Jordan" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+        </a>
+
+        </div>
+</section>
+<!-- latest arrivals SECTION -->
+<section id="latest-arrivals" class="py-16 px-4 lg:px-12 bg-white">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-black text-2xl lg:text-3xl font-display font-black uppercase">Latest Drops</h2>
+        </div>
+        <a href="catalog.html" class="text-red-600 font-bold text-sm hover:underline tracking-widest">VIEW ALL</a>
+    </div>
+<div id="latest-drops" class="flex overflow-x-auto pb-8 gap-4 snap-x no-scrollbar">
+    </div>
+</section>
+<!-- explore categories SECTION -->
+<section id="explore-categories" class="py-16 px-4 lg:px-12 bg-white">
+    <div class="flex flex-col mb-12 text-center lg:text-left">
+        <h2 class="text-black text-2xl lg:text-4xl font-display uppercase tracking-tighter font-black">Explore Categories</h2>
+        <p class="text-zinc-500 text-sm mt-2">Find the perfect item for every occasion.</p>
+        <div class="h-1 w-20 bg-red-600 mt-4 mx-auto lg:mx-0"></div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <a href="sneakers.html" class="category-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/cat-sneakers.jpg" alt="Performance" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                <h3 class="text-white font-black italic text-xl lg:text-2xl uppercase tracking-tighter">Sneakers</h3>
+            </div>
+        </a>
+
+        <a href="slides.html" class="category-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/cat-slides.jpg" alt="Lifestyle" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                <h3 class="text-white font-black italic text-xl lg:text-2xl uppercase tracking-tighter">Slides</h3>
+            </div>
+        </a>
+
+        <a href="caps.html" class="category-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/categories/retro.jpg" alt="Retro" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                <h3 class="text-white font-black italic text-xl lg:text-2xl uppercase tracking-tighter">Caps</h3>
+            </div>
+        </a>
+
+        <a href="jerseys.html" class="category-card group relative h-48 lg:h-64 overflow-hidden rounded-2xl bg-zinc-50 border-4 border-transparent hover:border-red-600 transition-all duration-300">
+            <img src="images/categories/limited.jpg" alt="Limited" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                <h3 class="text-white font-black italic text-xl lg:text-2xl uppercase tracking-tighter">Jerseys</h3>
+            </div>
+        </a>
+
+    </div>
+</section>
+<!-- trending SECTION -->
+ <section id="curated-section" class="py-16 px-4 lg:px-12 bg-white">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-black text-2xl lg:text-3xl font-display font-black uppercase tracking-tight">Curated For You</h2>
+            <p class="text-zinc-500 text-xs lg:text-sm mt-1 uppercase font-medium tracking-wide">Hand-picked styles based on the culture.</p>
+        </div>
+        <a href="catalog.html" class="text-red-600 font-bold text-sm hover:underline tracking-widest">VIEW ALL</a>
+    </div>
+
+   <div id="curated-grid" class="flex overflow-x-auto pb-8 gap-4 snap-x no-scrollbar lg:grid lg:grid-cols-4"></div>
+</section>
+     
+<!-- carousel SECTION -->
+<section class="index-trust-section">
+    <div class="swiper indexTrustSwiper">
+        <div class="swiper-wrapper">
+            
+            <div class="swiper-slide">
+                <div class="trust-content">
+                    <i class="fa-solid fa-truck-fast"></i>
+                    <h3>Fast Shipping Nationwide</h3>
+                    <p>Delivery costs on all orders may differ due to delivery location. <br>
+                       Free delivery on all orders above $150 – no hidden costs.</p>
+                </div>
+            </div>
+            
+            <div class="swiper-slide">
+                <div class="trust-content">
+                    <a href="https://wa.me/26378642446?text=Hi%20SneakerLab%20Support!" target="_blank" class="block hover:scale-105 transition-transform">
+                        <div class="whatsapp-btn-wrapper">
+                            <i class="fa-brands fa-whatsapp text-green-500"></i>
+                        </div>
+                        <h3>Customer support</h3>
+                        <p>Tap here to chat on WhatsApp. <br> Available 7 days a week.</p>
+                    </a>
+                </div>
+            </div>
+            <div class="swiper-slide">
+    <div class="trust-content">
+        <i class="fa-solid fa-mobile-retro"></i>
+        <h3>Local Payments</h3>
+        <p>We proudly accept EcoCash, <br> InnBucks & O'Mari payments.</p>
+    </div>
+</div>
+
+            <div class="swiper-slide">
+                <div class="trust-content">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <h3>Secure payment</h3>
+                    <p>Your payment data is protected and treated confidentially.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="index-slider-controls">
+            <div class="swiper-button-prev-index"><i class="fa-solid fa-chevron-left"></i></div>
+            <div class="swiper-pagination-index"></div>
+            <div class="swiper-button-next-index"><i class="fa-solid fa-chevron-right"></i></div>
+        </div>
+    </div>
+</section>
+
+<footer class="bg-black text-white pt-16 pb-8 px-6 lg:px-12 border-t border-zinc-900">
+    <div class="flex flex-col items-center text-center lg:text-left lg:grid lg:grid-cols-3 lg:gap-12 lg:items-start">
+        <div class="mb-12 lg:mb-0">
+            <h1 class="text-3xl font-black tracking-tighter italic uppercase mb-4">SNEAKER LAB</h1>
+            <p class="text-zinc-500 text-xs uppercase tracking-[0.3em] font-bold">Zimbabwe's Premier Heat</p>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-12 lg:mb-0">
+            <a href="faq.html" class="text-sm font-bold uppercase tracking-widest hover:text-red-600 transition-colors">FAQ</a>
+            <a href="contact.html" class="text-sm font-bold uppercase tracking-widest hover:text-red-600 transition-colors">Contact</a>
+            <a href="shipping-policy.html" class="text-sm font-bold uppercase tracking-widest hover:text-red-600 transition-colors">Shipping & Returns</a>
+            <a href="privacy.html" class="text-sm font-bold uppercase tracking-widest hover:text-red-600 transition-colors">Privacy Policy</a>
+        </div>
+
+        <div class="flex flex-col items-center lg:items-start">
+            <p class="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.3em] mb-6">Secure Payments</p>
+            <div class="flex flex-wrap justify-center lg:justify-start gap-3 max-w-xs">
+                <div class="bg-white px-3 py-1 rounded text-black font-black text-[9px] flex items-center h-8">ECOCASH</div>
+                <div class="bg-white px-3 py-1 rounded text-black font-black text-[9px] flex items-center h-8 italic">InnBucks</div>
+                <div class="bg-white px-3 py-1 rounded text-black font-black text-[9px] flex items-center h-8 uppercase">O'MARI</div>
+                <div class="bg-white px-3 py-1 rounded h-8 flex items-center"><i class="fa-brands fa-cc-visa text-blue-800 text-lg"></i></div>
+                <div class="bg-white px-3 py-1 rounded h-8 flex items-center"><i class="fa-brands fa-cc-mastercard text-red-600 text-lg"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-16 pt-8 border-t border-zinc-900 text-center">
+        <p class="text-zinc-600 text-[10px] font-bold tracking-widest uppercase">© 2026 SNEAKER LAB ZIMBABWE</p>
+    </div>
+</footer>
+
+<div class="drawer-overlay" id="drawer-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 98; opacity: 0; visibility: hidden; transition: all 0.3s ease;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/catalog.js"></script> 
+<script src="js/main.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const drawer = document.getElementById('mobile-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    const menuBtn = document.getElementById('mobile-menu-trigger');
+    const closeBtn = document.getElementById('drawer-close');
+    const mobileDropdowns = document.querySelectorAll('#mobile-drawer .dropdown-trigger');
+
+    // 2. TOGGLE LOGIC (Fixes the Overlap & Freeze)
+    function toggleDrawer(isOpen) {
+        if (isOpen) {
+            drawer.classList.add('active');
+            overlay.style.opacity = '1';
+            overlay.style.visibility = 'visible';
+            document.body.style.overflow = 'hidden'; // Locks background scroll
+        } else {
+            drawer.classList.remove('active');
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
+            document.body.style.overflow = ''; // Unlocks background scroll
+        }
+    }
+
+    if(menuBtn) menuBtn.addEventListener('click', () => toggleDrawer(true));
+    if(closeBtn) closeBtn.addEventListener('click', () => toggleDrawer(false));
+    if(overlay) overlay.addEventListener('click', () => toggleDrawer(false));
+
+    // 3. SUBMENU ACCORDIONS
+    mobileDropdowns.forEach(trigger => {
+        const submenu = trigger.parentElement.querySelector('.submenu');
+        if(submenu) submenu.style.display = 'none';
+
+        trigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetSubmenu = this.parentElement.querySelector('.submenu');
+            const icon = this.querySelector('i');
+
+            if (targetSubmenu.style.display === 'block') {
+                targetSubmenu.style.display = 'none';
+                if(icon) icon.style.transform = 'rotate(0deg)';
+            } else {
+                targetSubmenu.style.display = 'block';
+                if(icon) icon.style.transform = 'rotate(180deg)';
+            }
+        });
+    });
+
+    // 4. PRODUCT LOADING LOGIC
+    const initProducts = async () => {
+        if (typeof MockService !== 'undefined' && typeof renderProducts === 'function') {
+            const allProducts = await MockService.getAllProducts();
+            renderProducts(allProducts.slice(0, 8), 'latest-drops');
+            renderProducts([...allProducts].sort(() => 0.5 - Math.random()).slice(0, 8), 'curated-grid');
+            appendViewAllCard('latest-drops');
+            appendViewAllCard('curated-grid');
+        } else {
+            setTimeout(initProducts, 100);
+        }
+    };
+    initProducts();
+});
+
+function appendViewAllCard(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const viewAllHTML = `
+        <div class="flex-shrink-0 w-[45vw] md:w-[200px] flex items-center justify-center snap-center">
+            <a href="catalog.html" class="flex flex-col items-center group no-underline">
+                <div class="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all shadow-sm">
+                    <i class="fa-solid fa-arrow-right text-sm"></i>
+                </div>
+                <span class="mt-4 font-black uppercase text-[10px] tracking-widest text-zinc-400">View All</span>
+            </a>
+        </div>`;
+    container.insertAdjacentHTML('beforeend', viewAllHTML);
+}
+
+// 5. TRUST SWIPER
+new Swiper('.indexTrustSwiper', {
+    loop: true,
+    autoplay: { delay: 3500 },
+    pagination: { el: '.swiper-pagination-index', clickable: true },
+    navigation: { nextEl: '.swiper-button-next-index', prevEl: '.swiper-button-prev-index' },
+});
+</script>
+</body>
+</html>

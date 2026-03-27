@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist - SNEAKERLAB</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: var(--gray);
+        }
+
+        .wishlist-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .wishlist-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .wishlist-header h1 {
+            font-size: 2.5rem;
+            color: var(--black);
+            margin-bottom: 10px;
+        }
+
+        .wishlist-header p {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .wishlist-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        @media (max-width: 1024px) {
+            .wishlist-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .wishlist-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .wishlist-item {
+            background: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: 0.3s;
+        }
+
+        .wishlist-item:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .wishlist-item-image {
+            width: 100%;
+            height: 250px;
+            background: var(--gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wishlist-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-from-wishlist {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--accent);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            font-size: 1.1rem;
+        }
+
+        .remove-from-wishlist:hover {
+            background: var(--accent);
+            color: var(--white);
+        }
+
+        .wishlist-item-details {
+            padding: 20px;
+        }
+
+        .wishlist-item-brand {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .wishlist-item-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--black);
+            margin-bottom: 8px;
+            line-height: 1.3;
+            min-height: 40px;
+        }
+
+        .wishlist-item-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--black);
+            margin-bottom: 15px;
+        }
+
+        .size-selector {
+            margin-bottom: 15px;
+        }
+
+        .size-selector label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: var(--black);
+        }
+
+        .size-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: var(--white);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .size-selector select:focus {
+            outline: none;
+            border-color: var(--black);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .add-to-cart-from-wishlist {
+            width: 100%;
+            padding: 12px;
+            background: var(--black);
+            color: var(--white);
+            border: 2px solid var(--black);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+            letter-spacing: 0.5px;
+        }
+
+        .add-to-cart-from-wishlist:hover {
+            background: transparent;
+            color: var(--black);
+        }
+
+        .empty-wishlist {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-wishlist i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .empty-wishlist h2 {
+            font-size: 1.5rem;
+            color: var(--black);
+            margin-bottom: 10px;
+        }
+
+        .empty-wishlist p {
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+
+        .back-to-shopping {
+            display: inline-block;
+            padding: 12px 30px;
+            background: var(--black);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        .back-to-shopping:hover {
+            background: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar from main site -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-icons">
+                <a href="login.html" class="icon-link login-btn" title="Login">
+                    <i class="fa-regular fa-user"></i>
+                </a>
+                <a href="wishlist.html" class="icon-link wishlist-btn" title="Wishlist">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="wishlist-count">0</span>
+                </a>
+                <a href="cart.html" class="icon-link cart-btn" title="Cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count">0</span>
+                </a>
+            </div>
+
+            <div class="search-wrapper">
+                <input type="text" id="search-input" placeholder="SEARCHING FOR A SPECIFIC PAIR? TYPE HERE...">
+                <button type="submit" class="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <div class="logo">
+                <a href="index.html">SNEAKER<span class="logo-accent">LAB</span></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Wishlist Content -->
+    <div class="wishlist-container">
+        <div class="wishlist-header">
+            <h1>My Wishlist</h1>
+            <p>Your saved sneaker selections</p>
+        </div>
+
+        <div id="wishlist-items-container" class="wishlist-grid">
+            <!-- Items will be loaded here by JavaScript -->
+        </div>
+
+        <div id="empty-message" class="empty-wishlist" style="display: none;">
+            <i class="fa-regular fa-heart"></i>
+            <h2>Your Wishlist is Empty</h2>
+            <p>Start adding your favorite sneakers to save them for later!</p>
+            <a href="index.html" class="back-to-shopping">Continue Shopping</a>
+        </div>
+    </div>
+
+    <script>
+        // Shoe Size Conversion Chart
+        const sizeConversion = {
+            '4 UK': { uk: '4', usa: '5', euro: '37' },
+            '4.5 UK': { uk: '4.5', usa: '5.5', euro: '37.5' },
+            '5 UK': { uk: '5', usa: '6', euro: '38' },
+            '5.5 UK': { uk: '5.5', usa: '6.5', euro: '38.5' },
+            '6 UK': { uk: '6', usa: '7', euro: '39' },
+            '6.5 UK': { uk: '6.5', usa: '7.5', euro: '40' },
+            '7 UK': { uk: '7', usa: '8', euro: '40.5' },
+            '7.5 UK': { uk: '7.5', usa: '8.5', euro: '41' },
+            '8 UK': { uk: '8', usa: '9', euro: '42' },
+            '8.5 UK': { uk: '8.5', usa: '9.5', euro: '42.5' },
+            '9 UK': { uk: '9', usa: '10', euro: '43' },
+            '9.5 UK': { uk: '9.5', usa: '10.5', euro: '44' },
+            '10 UK': { uk: '10', usa: '11', euro: '44.5' }
+        };
+
+        // Load wishlist items from localStorage
+        function loadWishlist() {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+            const container = document.getElementById('wishlist-items-container');
+            const emptyMessage = document.getElementById('empty-message');
+
+            if (wishlist.length === 0) {
+                emptyMessage.style.display = 'block';
+                container.innerHTML = '';
+                return;
+            }
+
+            emptyMessage.style.display = 'none';
+            
+            container.innerHTML = wishlist.map((item, index) => `
+                <div class="wishlist-item">
+                    <div class="wishlist-item-image">
+                        <img src="${item.img}" alt="${item.name}">
+                        <button class="remove-from-wishlist" onclick="removeFromWishlist(${index})" title="Remove from Wishlist">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="wishlist-item-details">
+                        <div class="wishlist-item-brand">${item.brand}</div>
+                        <h3 class="wishlist-item-name">${item.name}</h3>
+                        <p class="wishlist-item-price">${item.price}</p>
+                        
+                        <div class="size-selector">
+                            <label>Select Size</label>
+                            <select onchange="updateSizeDisplay(this, ${index})">
+                                <option value="">Choose Size...</option>
+                                ${Object.keys(sizeConversion).map(size => 
+                                    `<option value="${size}">${size} | USA ${sizeConversion[size].usa} | EURO ${sizeConversion[size].euro}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        
+                        <button class="add-to-cart-from-wishlist" onclick="moveToCart(${index})">Add to Cart</button>
+                    </div>
+                </div>
+            `).join('');
+
+            updateCounters();
+        }
+
+        // Remove item from wishlist
+        function removeFromWishlist(index) {
+            let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+            wishlist.splice(index, 1);
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            loadWishlist();
+        }
+
+        // Move item from wishlist to cart
+        function moveToCart(index) {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+            const item = wishlist[index];
+
+            // Get the selected size
+            const sizeSelect = document.querySelectorAll('.size-selector select')[index];
+            if (!sizeSelect.value) {
+                alert('Please select a size before adding to cart');
+                return;
+            }
+
+            item.size = sizeSelect.value;
+            
+            // Add to cart
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.push(item);
+            localStorage.setItem('cart', JSON.stringify(cart));
+
+            // Remove from wishlist
+            removeFromWishlist(index);
+            alert('Item moved to cart!');
+        }
+
+        // Update wishlist counter
+        function updateCounters() {
+            const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            
+            const wishlistCounter = document.querySelector('.wishlist-count');
+            const cartCounter = document.querySelector('.cart-count');
+            
+            if (wishlistCounter) wishlistCounter.innerText = wishlist.length;
+            if (cartCounter) cartCounter.innerText = cart.length;
+        }
+
+        function updateSizeDisplay(select, index) {
+            const size = select.value;
+            if (size && sizeConversion[size]) {
+                const conversion = sizeConversion[size];
+                select.title = `UK: ${conversion.uk} | USA: ${conversion.usa} | EURO: ${conversion.euro}`;
+            }
+        }
+
+        // Load wishlist when page loads
+        window.addEventListener('DOMContentLoaded', loadWishlist);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>

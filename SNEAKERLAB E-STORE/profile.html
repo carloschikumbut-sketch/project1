@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account | SNEAKERLAB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        #tracking-modal.hidden, #address-modal.hidden { display: none; }
+        .modal-animate { transition: transform 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-zinc-50 text-black font-body">
+
+    <header class="bg-white border-b border-zinc-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <a href="index.html" class="text-zinc-400 hover:text-black transition-colors">
+            <i class="fa-solid fa-arrow-left text-lg"></i>
+        </a>
+        <h1 class="text-[10px] font-black uppercase tracking-[0.2em]">My Account</h1>
+        <div class="w-5"></div> 
+    </header>
+
+    <main class="max-w-md mx-auto px-6 py-10">
+        <div class="bg-white rounded-3xl p-8 shadow-sm border border-zinc-100 text-center mb-6">
+            <div id="profile-initials" class="w-20 h-20 bg-black text-white text-2xl font-black rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                --
+            </div>
+            <h2 id="profile-name" class="text-xl font-black uppercase italic tracking-tighter">Loading...</h2>
+            <p id="profile-email" class="text-xs text-zinc-400 font-bold mt-1 uppercase tracking-widest">---</p>
+        </div>
+
+        <div class="mb-8">
+            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 px-2">Order Activity</h3>
+            <div id="orders-container" class="space-y-4">
+                <div class="bg-white rounded-2xl p-8 border border-dashed border-zinc-200 text-center">
+                    <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">No orders found yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <div onclick="openAddress()" class="bg-white rounded-2xl p-5 flex items-center justify-between border border-zinc-100 group cursor-pointer">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:bg-black group-hover:text-white transition-all">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest">Address Book</p>
+                        <p class="text-[9px] text-zinc-400 font-bold uppercase">Manage shipping info</p>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-zinc-300 text-xs"></i>
+            </div>
+
+            <button onclick="handleSignOut()" class="w-full mt-6 py-5 bg-white border-2 border-zinc-100 text-red-600 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98]">
+                Sign Out Account
+            </button>
+        </div>
+    </main>
+
+    <div id="tracking-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeTracking()"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] p-8 max-w-md mx-auto h-[80vh] overflow-y-auto modal-animate">
+            <div class="w-12 h-1.5 bg-zinc-100 rounded-full mx-auto mb-8"></div>
+            
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">Track Order</h2>
+                    <p id="track-id" class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">REF: --</p>
+                </div>
+                <button onclick="closeTracking()" class="w-10 h-10 bg-zinc-50 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="tracking-log" class="relative space-y-8 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-zinc-100"></div>
+
+            <div id="courier-card" class="mt-10 p-5 bg-black rounded-3xl text-white hidden">
+                <p class="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-3">Courier Assigned</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-zinc-800 rounded-2xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-truck"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-xs font-black uppercase">Swift Delivery Ltd</p>
+                        <p class="text-[10px] text-zinc-400 font-bold uppercase">Tracking: SW-99201</p>
+                    </div>
+                    <a href="tel:+263786429446" class="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-phone text-sm"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="address-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAddress()"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] p-8 max-w-md mx-auto h-[70vh] modal-animate">
+            <div class="w-12 h-1.5 bg-zinc-100 rounded-full mx-auto mb-8"></div>
+            <h2 class="text-2xl font-black italic uppercase tracking-tighter mb-6">Shipping Address</h2>
+            <form id="address-form" class="space-y-4">
+                <div>
+                    <label class="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-2">Full Name</label>
+                    <input type="text" id="ship-name" required placeholder="Tinashe Murwira" class="w-full bg-zinc-50 border-none rounded-2xl px-5 py-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none">
+                </div>
+                <div>
+                    <label class="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-2">Street Address</label>
+                    <input type="text" id="ship-street" required placeholder="77 Samora Machel Ave" class="w-full bg-zinc-50 border-none rounded-2xl px-5 py-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-2">City</label>
+                        <input type="text" id="ship-city" required placeholder="Harare" class="w-full bg-zinc-50 border-none rounded-2xl px-5 py-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-2">Phone</label>
+                        <input type="tel" id="ship-phone" required placeholder="+263..." class="w-full bg-zinc-50 border-none rounded-2xl px-5 py-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-black text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-black/20 active:scale-95 transition-all mt-4">
+                    Save Address
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        function renderOrderHistory() {
+            const container = document.getElementById('orders-container');
+            const orders = JSON.parse(localStorage.getItem('sneaker-lab-orders')) || [];
+            if (orders.length === 0) return;
+
+            container.innerHTML = orders.map(order => {
+                const isPaid = order.paymentStatus === 'Completed';
+                const payClass = isPaid ? 'text-green-600 bg-green-50' : 'text-amber-600 bg-amber-50';
+                const transitActive = order.orderStatus === 'In Transit' || order.orderStatus === 'Fulfilled';
+                const fulfilledActive = order.orderStatus === 'Fulfilled';
+
+                return `
+                <div class="bg-white rounded-3xl p-5 border border-zinc-100 mb-6 shadow-sm overflow-hidden text-left">
+                    <div class="flex justify-between items-center mb-5">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-zinc-300">Ref: ${order.id}</span>
+                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase ${payClass}">${order.paymentStatus}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between px-2 mb-6">
+                        <div class="flex flex-col items-center gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-black ring-4 ring-zinc-50"></div>
+                            <p class="text-[7px] font-black uppercase tracking-tighter">Placed</p>
+                        </div>
+                        <div class="flex-1 h-[2px] ${transitActive ? 'bg-black' : 'bg-zinc-100'} mx-1"></div>
+                        <div class="flex flex-col items-center gap-1.5 ${transitActive ? 'opacity-100' : 'opacity-20'}">
+                            <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                            <p class="text-[7px] font-black uppercase tracking-tighter">In Transit</p>
+                        </div>
+                        <div class="flex-1 h-[2px] ${fulfilledActive ? 'bg-black' : 'bg-zinc-100'} mx-1"></div>
+                        <div class="flex flex-col items-center gap-1.5 ${fulfilledActive ? 'opacity-100' : 'opacity-20'}">
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                            <p class="text-[7px] font-black uppercase tracking-tighter">Fulfilled</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 mb-5">
+                        ${order.items.map(item => `
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-zinc-50 rounded-2xl p-2 flex-shrink-0">
+                                    <img src="${item.image_url}" class="w-full h-full object-contain">
+                                </div>
+                                <div class="flex-1 text-left">
+                                    <p class="text-[10px] font-black uppercase leading-none mb-1">${item.name}</p>
+                                    <p class="text-[8px] text-zinc-400 font-bold uppercase">Size: ${item.size} • Qty: ${item.quantity}</p>
+                                </div>
+                                <p class="text-[11px] font-black italic">$${item.price.toFixed(2)}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="pt-4 border-t border-zinc-100 flex justify-between items-center">
+                        <div>
+                            <p class="text-[7px] text-zinc-400 font-black uppercase tracking-widest">Grand Total</p>
+                            <p class="text-xl font-black italic tracking-tighter">$${order.total.toFixed(2)}</p>
+                        </div>
+                        <button onclick="openTracking('${order.id}')" class="bg-black text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all">
+                            Track Order
+                        </button>
+                    </div>
+                </div>`;
+            }).reverse().join('');
+        }
+
+        function openTracking(orderId) {
+            const orders = JSON.parse(localStorage.getItem('sneaker-lab-orders')) || [];
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('track-id').innerText = `REF: ${order.id}`;
+            const logContainer = document.getElementById('tracking-log');
+            const courierCard = document.getElementById('courier-card');
+            
+            let logHtml = `<div class="relative flex gap-6"><div class="z-10 w-6 h-6 rounded-full bg-black border-4 border-white flex items-center justify-center text-[10px] text-white">1</div><div><p class="text-[11px] font-black uppercase">Order Placed</p><p class="text-[9px] text-zinc-400 font-bold uppercase">${order.date}</p></div></div>`;
+            if (order.paymentStatus === 'Completed') logHtml += `<div class="relative flex gap-6"><div class="z-10 w-6 h-6 rounded-full bg-black border-4 border-white flex items-center justify-center text-[10px] text-white">2</div><div><p class="text-[11px] font-black uppercase">Payment Verified</p><p class="text-[9px] text-zinc-400 font-bold uppercase">Funds Confirmed</p></div></div>`;
+            if (order.orderStatus === 'In Transit' || order.orderStatus === 'Fulfilled') {
+                logHtml += `<div class="relative flex gap-6"><div class="z-10 w-6 h-6 rounded-full bg-blue-500 border-4 border-white flex items-center justify-center text-[10px] text-white">3</div><div><p class="text-[11px] font-black uppercase">In Transit</p><p class="text-[9px] text-zinc-400 font-bold uppercase">Swift Courier</p></div></div>`;
+                courierCard.classList.remove('hidden');
+            } else { courierCard.classList.add('hidden'); }
+            if (order.orderStatus === 'Fulfilled') logHtml += `<div class="relative flex gap-6"><div class="z-10 w-6 h-6 rounded-full bg-green-500 border-4 border-white flex items-center justify-center text-[10px] text-white">4</div><div><p class="text-[11px] font-black uppercase">Fulfilled</p><p class="text-[9px] text-zinc-400 font-bold uppercase">Package Delivered</p></div></div>`;
+
+            logContainer.innerHTML = logHtml;
+            document.getElementById('tracking-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTracking() { document.getElementById('tracking-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
+
+        function openAddress() {
+            const saved = JSON.parse(localStorage.getItem('sneaker-lab-address')) || {};
+            if (saved.fullName) {
+                document.getElementById('ship-name').value = saved.fullName;
+                document.getElementById('ship-street').value = saved.address;
+                document.getElementById('ship-city').value = saved.city;
+                document.getElementById('ship-phone').value = saved.phone;
+            }
+            document.getElementById('address-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddress() { document.getElementById('address-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
+
+        document.getElementById('address-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const addr = {
+                fullName: document.getElementById('ship-name').value,
+                address: document.getElementById('ship-street').value,
+                city: document.getElementById('ship-city').value,
+                phone: document.getElementById('ship-phone').value
+            };
+            localStorage.setItem('sneaker-lab-address', JSON.stringify(addr));
+            alert("Address Saved!");
+            closeAddress();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('sneaker-lab-user'));
+            if (!user || !user.isLoggedIn) { window.location.href = 'account.html'; return; }
+            document.getElementById('profile-name').innerText = user.name || "Sneaker Head";
+            document.getElementById('profile-email').innerText = user.email || "user@sneakerlab.com";
+            const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "SL";
+            document.getElementById('profile-initials').innerText = initials;
+            renderOrderHistory();
+        });
+
+        function handleSignOut() {
+            if(confirm("Sign out?")) { localStorage.removeItem('sneaker-lab-user'); window.location.href = 'index.html'; }
+        }
+    </script>
+</body>
+</html>

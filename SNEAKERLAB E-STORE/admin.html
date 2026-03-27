@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNEAKERLAB | Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <nav class="sidebar">
+    <div class="sidebar-brand"><i class="fa-solid fa-sneaker"></i> SNEAKER<span>LAB</span></div>
+    <div class="nav-links">
+        <a href="admin.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i> Analytics</a>
+        <a href="inventory.html" class="nav-item"><i class="fa-solid fa-box"></i> Products</a>
+        <a href="orders.html" class="nav-item"><i class="fa-solid fa-receipt"></i> Orders</a>
+        <a href="customers.html" class="nav-item"><i class="fa-solid fa-users"></i> Customers</a>
+        <a href="settings.html" class="nav-item"><i class="fa-solid fa-gear"></i> Settings</a>
+        <div class="nav-divider"></div>
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-eye"></i> View Store</a>
+    </div>
+</nav>
+
+    <main class="main-content">
+        <header class="admin-header">
+            <h1>Analytics Overview</h1>
+            <div class="admin-actions">
+                <button class="btn-secondary">Last 30 Days</button>
+                <button class="btn-primary" onclick="window.print()">Print Report</button>
+            </div>
+        </header>
+
+        <section class="kpi-container">
+            <div class="card kpi-card">
+                <p class="card-label">Total Sales</p>
+                <h2 id="total-sales">$0.00</h2>
+                <span class="trend up">+14.2%</span>
+            </div>
+            <div class="card kpi-card">
+                <p class="card-label">Orders</p>
+                <h2 id="total-orders">0</h2>
+                <span class="trend down">-2.1%</span>
+            </div>
+            <div class="card kpi-card">
+                <p class="card-label">Average Order Value</p>
+                <h2 id="aov">$0.00</h2>
+            </div>
+        </section>
+
+        <section class="charts-grid">
+            <div class="card chart-card">
+                <h3>Sales Performance</h3>
+                <canvas id="salesLineChart"></canvas>
+            </div>
+            <div class="card chart-card">
+                <h3>Top Selling Sneakers</h3>
+                <canvas id="topProductsBarChart"></canvas>
+            </div>
+        </section>
+    </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/admin-dashboard.js"></script>
+<script src="js/script.js"></script>
+    
+</body>
+</html>

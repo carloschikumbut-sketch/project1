@@ -1,0 +1,23 @@
+<main class="collection-wrapper">
+    <header class="collection-header">
+        <h1>AIR JORDAN</h1>
+        <p>Looking for the latest Jordan kicks? You're in the right place! Here, you'll find all your favorites from Jumpman's illustrious history, including classics like the Air Jordan 1, Air Jordan 3, Air Jordan 11, and everything in between, as well as coveted collaborations with the likes of Travis Scott, A Ma Maniére, and more. Make sure you sign up for our newsletter to be the first in line for updates on the latest releases, limited drops, collaborations, and special treats!</p>
+    </header>
+
+    <div id="jordan-grid" class="product-grid"></div>
+</main>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 1. Show skeletons while waiting (Professional touch)
+        if (typeof showSkeletons === 'function') {
+            showSkeletons('jordan-grid', 8);
+        }
+
+        // 2. Fetch the data
+        const products = await getSneakersByCategory('jordan', 24);
+        
+        // 3. Just call render. 
+        // If products is [], renderProducts handles the "Empty State" automatically.
+        renderProducts(products, 'jordan-grid');
+    });
+</script>

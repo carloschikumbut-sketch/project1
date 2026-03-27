@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Returns & Exchanges | Sneaker Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #ffffff; 
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .returns-header {
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            text-transform: uppercase;
+        }
+
+        .page-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 80px 24px;
+        }
+
+        /* Step Indicator Styling */
+        .step-number {
+            font-size: 10px;
+            font-weight: 900;
+            background: #000;
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-up { animation: fadeIn 0.6s ease forwards; }
+
+        @media (max-width: 768px) {
+            .page-container { padding: 40px 20px; }
+            .returns-header { font-size: 3.5rem !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="page-container">
+        <div class="animate-up">
+            <nav class="mb-12">
+                <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors flex items-center">
+                    <i class="fa-solid fa-arrow-left mr-2 text-[8px]"></i> Back to Shopping
+                </a>
+            </nav>
+
+            <header class="mb-20">
+                <p class="text-red-600 font-black uppercase tracking-[0.3em] text-[10px] mb-3">Policy & Satisfaction</p>
+                <h1 class="returns-header text-5xl md:text-7xl leading-[0.9] tracking-tighter">
+                    Returns & <br> Exchanges
+                </h1>
+                <p class="text-zinc-500 text-sm mt-6 max-w-lg font-medium">
+                    We stand behind our collection. If your pair isn't perfect, we've designed a straightforward process to get it right.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20">
+                
+                <div class="space-y-12">
+                    <div>
+                        <h4 class="text-[11px] font-black uppercase tracking-[0.2em] text-black mb-6 flex items-center gap-3">
+                            <span class="w-8 h-[2px] bg-red-600"></span> The Guarantee
+                        </h4>
+                        <div class="prose-style space-y-6">
+                            <p class="text-sm text-zinc-600">
+                                You have <span class="text-black font-bold">3 days</span> from the date of delivery to initiate a return or exchange. 
+                            </p>
+                            <p class="text-sm text-zinc-600">
+                                All items must be returned in <span class="text-black font-bold">Deadstock Condition</span>—unworn, with original packaging fully intact.
+                            </p>
+                            <div class="bg-zinc-50 p-6 border-l-4 border-black">
+                                <p class="text-[10px] font-black uppercase mb-2">Final Sale Items</p>
+                                <p class="text-xs text-zinc-500 italic">Pre-ordered items and limited release "Hype" drops are eligible for exchange only, no refunds.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-10">
+                    <h4 class="text-[11px] font-black uppercase tracking-[0.2em] text-black mb-8">How to Return</h4>
+                    
+                    <div class="flex gap-6">
+                        <div class="flex-shrink-0"><span class="step-number">01</span></div>
+                        <div>
+                            <p class="font-bold text-xs uppercase mb-2 tracking-wide">Initiate Request</p>
+                            <p class="text-zinc-500 text-sm">Contact our support team with your order number and reason for return.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-6">
+                        <div class="flex-shrink-0"><span class="step-number">02</span></div>
+                        <div>
+                            <p class="font-bold text-xs uppercase mb-2 tracking-wide">Verification</p>
+                            <p class="text-zinc-500 text-sm">Wait for a return authorization. We usually respond within 24 hours.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-6">
+                        <div class="flex-shrink-0"><span class="step-number">03</span></div>
+                        <div>
+                            <p class="font-bold text-xs uppercase mb-2 tracking-wide">Secure Shipping</p>
+                            <p class="text-zinc-500 text-sm">Pack the sneakers securely in a double-box to protect the original sneaker box. Once you are ready to ship your return, address your package to shipping address which will be provided by our support team.</p>
+                        </div>
+                    </div>
+                     <div class="flex gap-6">
+        <div class="flex-shrink-0"><span class="step-number">04</span></div>
+        <div>
+            <p class="font-bold text-xs uppercase mb-2 tracking-wide">Return Shipping Method</p>
+            <p class="text-zinc-500 text-sm leading-relaxed">
+               Use a trackable and insured shipping method to return your package, with your order number clearly printed on your shipping label.
+            </p>
+        </div>
+    </div>
+                    <div class="flex gap-6">
+        <div class="flex-shrink-0"><span class="step-number">05</span></div>
+        <div>
+            <p class="font-bold text-xs uppercase mb-2 tracking-wide">Refund Processing</p>
+            <p class="text-zinc-500 text-sm leading-relaxed">
+                Once your return is authenticated, please allow <span class="text-black font-bold">24-72 hours</span> for your bank to credit the refund back to your original payment method.
+            </p>
+        </div>
+    </div>
+
+    <div class="flex gap-6">
+        <div class="flex-shrink-0"><span class="step-number">06</span></div>
+        <div>
+            <p class="font-bold text-xs uppercase mb-2 tracking-wide">Final Notification</p>
+            <p class="text-zinc-500 text-sm">
+                You will receive a final confirmation email once the transaction is completed on our end.
+            </p>
+        </div>
+    </div>
+
+    <div class="mt-12 p-6 bg-zinc-50 border border-zinc-200 rounded-sm">
+        <p class="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">Important Notice</p>
+        <p class="text-[11px] text-zinc-600 leading-relaxed italic">
+            Sneaker Lab is not responsible for any return shipping fees, or for returns that are lost or stolen while in transit. We strongly recommend using a trackable and insured shipping method with a signature requirement.
+        </p>
+    </div>
+
+                    <div class="mt-12">
+                        <a href="contact.html" class="inline-block bg-black text-white px-10 py-5 text-[11px] font-black uppercase tracking-widest hover:bg-red-600 transition-all w-full text-center">
+                            Start a Return
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

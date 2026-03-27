@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latest Arrivals - SNEAKERLAB</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: var(--gray);
+        }
+
+        .arrivals-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .arrivals-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .arrivals-header h1 {
+            font-size: 2.5rem;
+            color: var(--black);
+            margin-bottom: 15px;
+        }
+
+        .arrivals-header p {
+            color: #666;
+            font-size: 1.05rem;
+            max-width: 700px;
+            margin: 0 auto 20px;
+            line-height: 1.6;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 0;
+            margin-bottom: 50px;
+        }
+
+        .product-card {
+            background: #fff;
+            border: 1px solid #f2f2f2;
+            border-radius: 8px;
+            transition: 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+        .product-image-container {
+            height: 200px;
+            background: #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .product-img {
+            width: 85%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .product-details {
+            padding: 15px;
+        }
+
+        .brand-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .product-name {
+            font-size: 0.9rem;
+            height: 40px;
+            overflow: hidden;
+            font-weight: 700;
+            color: var(--black);
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--black);
+            margin-bottom: 15px;
+        }
+
+        .product-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .add-to-cart-btn,
+        .buy-now-btn {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 2px solid var(--black);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-cart-btn {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .add-to-cart-btn:hover {
+            background: transparent;
+            color: var(--black);
+        }
+
+        .buy-now-btn {
+            background: var(--accent);
+            color: var(--white);
+            border-color: var(--accent);
+        }
+
+        .buy-now-btn:hover {
+            background: transparent;
+            color: var(--accent);
+        }
+
+        .product-card .wishlist-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            color: #000000;
+            font-size: 1.5rem;
+        }
+
+        .product-card .wishlist-btn.active {
+            color: var(--accent);
+        }
+
+        .product-card .wishlist-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 50px;
+            flex-wrap: wrap;
+        }
+
+        .pagination button,
+        .pagination a {
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            background: var(--white);
+            color: var(--black);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 0.9rem;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .pagination button:hover,
+        .pagination a:hover {
+            border-color: var(--black);
+            background: var(--gray);
+        }
+
+        .pagination button.active,
+        .pagination a.active {
+            background: var(--black);
+            color: var(--white);
+            border-color: var(--black);
+            font-weight: 700;
+        }
+
+        .pagination button:disabled,
+        .pagination a.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--gray);
+            color: #999;
+            border-color: #ddd;
+        }
+
+        .pagination .prev-btn,
+        .pagination .next-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            min-width: auto;
+            padding: 12px 15px;
+        }
+
+        .pagination .page-info {
+            padding: 12px 20px;
+            color: #666;
+            font-size: 0.9rem;
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+
+        .pagination .page-info:hover {
+            background: transparent;
+            border-color: #ddd;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .no-results i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .no-results h2 {
+            font-size: 1.5rem;
+            color: var(--black);
+            margin-bottom: 10px;
+        }
+
+        .back-to-home {
+            display: inline-block;
+            padding: 12px 30px;
+            background: var(--black);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: 0.3s;
+            margin-top: 20px;
+        }
+
+        .back-to-home:hover {
+            background: var(--accent);
+        }
+
+        .results-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+        /* TOAST NOTIFICATIONS */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.toast {
+    pointer-events: auto;
+    background: #1a1a1a;
+    color: white;
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 300px;
+    transform: translateX(120%); /* Start off-screen */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast.show { transform: translateX(0); }
+.toast-success { border-left: 4px solid #4ade80; }
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    width: 100%;
+}
+
+@keyframes toastProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+.toast.burning .toast-progress {
+    animation: toastProgress 3s linear forwards;
+}
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-icons">
+                <a href="login.html" class="icon-link login-btn" title="Login">
+                    <i class="fa-regular fa-user"></i>
+                </a>
+                <a href="wishlist.html" class="icon-link wishlist-btn" title="Wishlist">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="wishlist-count">0</span>
+                </a>
+                <a href="cart.html" class="icon-link cart-btn" title="Cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count">0</span>
+                </a>
+            </div>
+
+            <div class="search-wrapper">
+                <input type="text" id="search-input" placeholder="SEARCHING FOR A SPECIFIC PAIR? TYPE HERE...">
+                <button type="submit" class="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <div class="logo">
+                <a href="index.html">SNEAKER<span class="logo-accent">LAB</span></a>
+            </div>
+        </div>
+    </nav>
+
+        <!-- Latest Arrivals Page -->
+        <div class="arrivals-container">
+            <!-- Header -->
+            <div class="arrivals-header">
+                <h1>Latest Arrivals</h1>
+                <p>Discover our newest collection of premium sneakers. Stay ahead of trends with fresh releases from all your favorite brands. Limited stock available on select items!</p>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="products-grid" class="products-grid">
+                <!-- Products will be loaded here -->
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="pagination"></div>
+        </div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- Column 1: Brand Info -->
+            <div class="footer-col">
+                <div class="logo footer-logo">
+                    <a href="index.html">SNEAKER<span>LAB</span></a>
+                </div>
+                <p>Your number one source for the rarest drops and latest trends in sneaker culture.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+                </div>
+            </div>
+
+            <!-- Column 2: Quick Links -->
+            <div class="footer-col">
+                <h4>SHOP</h4>
+                <ul>
+                    <li><a href="latest-arrivals.html">New Arrivals</a></li>
+                    <li><a href="#brands">Featured Brands</a></li>
+                    <li><a href="#sale">Sale</a></li>
+                    <li><a href="#slides">Slides</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 3: Support -->
+            <div class="footer-col">
+                <h4>SUPPORT</h4>
+                <ul>
+                    <li><a href="#">Order Tracking</a></li>
+                    <li><a href="#">Returns & Exchanges</a></li>
+                    <li><a href="#">Shipping Info</a></li>
+                    <li><a href="#">FAQ</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 4: Newsletter -->
+            <div class="footer-col">
+                <h4>STAY IN THE LOOP</h4>
+                <p>Subscribe to get notified about secret drops.</p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Email Address" required>
+                    <button type="submit">JOIN</button>
+                </form>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="payment-methods">
+                <img src="images/ecocash.png" alt="EcoCash" class="local-pay-icon">
+                <img src="images/innbucks.png" alt="Innbucks" class="local-pay-icon">
+                <img src="images/onemoney.png" alt="OneMoney" class="local-pay-icon">
+                <img src="images/omari.png" alt="Omari" class="local-pay-icon">
+                <i class="fa-brands fa-cc-visa"></i>
+                <i class="fa-brands fa-cc-mastercard"></i>
+            </div>
+            <p>&copy; 2026 SNEAKERLAB. All Rights Reserved. | <a href="#">Privacy Policy</a></p>
+        </div>
+    </footer>
+
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script>
+        let currentPage = 1;
+        const itemsPerPage = 16;
+        let allProducts = [];
+
+        async function fetchLatestArrivals() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '<div class="no-results">Loading latest drops...</div>';
+
+            try {
+                // Determine if we are filtering by brand from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const selectedBrand = urlParams.get('brand');
+                const headerTitle = document.querySelector('.arrivals-header h1');
+
+                let query = _supabase
+                    .from('products')
+                    .select('*')
+                    .eq('category', 'latest') // STRICT FILTER
+                    .order('created_at', { ascending: false });
+
+                if (selectedBrand) {
+                    query = query.eq('brand', selectedBrand.toUpperCase());
+                    if (headerTitle) headerTitle.innerText = `${selectedBrand.toUpperCase()} COLLECTION`;
+                }
+
+                const { data, error } = await query;
+
+                if (error) throw error;
+
+                allProducts = data;
+                displayProducts();
+                updatePagination();
+
+            } catch (err) {
+                console.error("Fetch error:", err.message);
+                grid.innerHTML = '<div class="no-results"><h2>Oops!</h2><p>Could not connect to the vault.</p></div>';
+            }
+        }
+
+        function displayProducts() {
+            const grid = document.getElementById('products-grid');
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageProducts = allProducts.slice(start, end);
+
+            if (pageProducts.length === 0) {
+                grid.innerHTML = '<div class="no-results"><i class="fa-solid fa-box-open"></i><h2>No items found</h2><a href="index.html" class="back-to-home">Back to Shop</a></div>';
+                return;
+            }
+
+            const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+
+            grid.innerHTML = pageProducts.map((shoe) => {
+                const isWishlisted = wishlist.some(item => item.id === shoe.id);
+                const shoeJSON = JSON.stringify(shoe).replace(/"/g, '&quot;');
+                
+                return `
+                <div class="product-card">
+                    <div class="product-image-container">
+                        <button class="wishlist-btn ${isWishlisted ? 'active' : ''}" onclick="toggleWishlist(this, ${shoeJSON})">
+                            <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                        </button>
+                        <img src="${shoe.image_url || 'images/placeholder.jpg'}" alt="${shoe.name}" class="product-img" onclick="window.location.href='product-details.html?id=${shoe.id}'">
+                    </div>
+                    <div class="product-details">
+                        <span class="brand-tag">${shoe.brand || 'PREMIUM'}</span>
+                        <h3 class="product-name">${shoe.name}</h3>
+                        <p class="product-price">$${parseFloat(shoe.price).toFixed(2)}</p>
+                        <div class="product-buttons">
+                            <button class="add-to-cart-btn" onclick='addToCart(${shoeJSON})'>Add</button>
+                            <button class="buy-now-btn" onclick='buyNow(${shoeJSON})'>Buy</button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function updatePagination() {
+            const paginationDiv = document.getElementById('pagination');
+            const totalPages = Math.ceil(allProducts.length / itemsPerPage);
+            
+            if (totalPages <= 1) { 
+                paginationDiv.innerHTML = ''; 
+                return; 
+            }
+
+            let html = `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-left"></i></button>`;
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+            html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="fa-solid fa-chevron-right"></i></button>`;
+            paginationDiv.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            displayProducts();
+            updatePagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLatestArrivals();
+            // These functions are inside your script.js which is loaded below
+            if (typeof updateCartCounters === 'function') updateCartCounters();
+            if (typeof updateWishlistCounters === 'function') updateWishlistCounters();
+        });
+    </script>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

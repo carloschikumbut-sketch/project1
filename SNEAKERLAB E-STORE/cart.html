@@ -1,0 +1,18 @@
+function updateCartBadge() {
+    const badge = document.getElementById('cart-badge');
+    if (!badge) return;
+
+    // 1. Get current cart from storage
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    // 2. Calculate total quantity (not just number of rows)
+    const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+
+    // 3. Update the UI
+    if (totalItems > 0) {
+        badge.innerText = totalItems;
+        badge.classList.remove('hidden'); // Show it if items exist
+    } else {
+        badge.classList.add('hidden'); // Hide it if empty
+    }
+}

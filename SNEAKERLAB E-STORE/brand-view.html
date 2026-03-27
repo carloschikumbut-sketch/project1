@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Collection | SNEAKERLAB</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <main class="brand-page-wrapper">
+        <header class="brand-hero">
+            <h1 id="brand-title">COLLECTION</h1>
+            <p id="item-count">0 Items Found</p>
+        </header>
+
+        <section class="product-grid-container">
+            <div id="brand-grid" class="product-grid">
+                </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script> <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', initBrandView);
+
+        async function initBrandView() {
+            // 1. Get Brand from URL
+            const params = new URLSearchParams(window.location.search);
+            const brandName = params.get('brand');
+
+            if (!brandName) {
+                window.location.href = 'index.html'; // Redirect if no brand found
+                return;
+            }
+
+            // 2. Update UI Title
+            document.getElementById('brand-title').innerText = brandName.toUpperCase();
+            document.title = `${brandName.toUpperCase()} | SNEAKERLAB`;
+
+            // 3. Show Skeletons while loading
+            showSkeletons('brand-grid', 8);
+
+            // 4. Fetch Brand Data from Supabase
+            const { data: products, error } = await _supabase
+                .from('products')
+                .select('*')
+                .ilike('brand', brandName) // Case-insensitive match
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Fetch error:", error);
+                return;
+            }
+
+            // 5. Render Products
+            document.getElementById('item-count').innerText = `${products.length} Items Found`;
+            renderProducts(products, 'brand-grid');
+        }
+    </script>
+</body>
+</html>
